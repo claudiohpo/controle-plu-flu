@@ -170,3 +170,43 @@ input:focus, select:focus {
   }
 }
 
+/* estilos para tabela de relatório */
+#table-register {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  margin-top: 16px;
+}
+
+#table-register th, #table-register td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f6;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+#table-register thead {
+  background: linear-gradient(180deg,#f3f7fb,#e9f0fb);
+}
+
+#table-register th {
+  font-weight: 700;
+  color: #1b2b4a;
+}
+
+#table-register tbody tr:hover {
+  background-color: #f6f9ff;
+}
+
+#table-register td:first-child {
+  width: 48px; /* coluna do radio */
+  text-align: center;
+}
+
+/* responsividade: permitir scroll horizontal em telas pequenas */
+.table-wrapper {
+  overflow-x: auto;
+}
