@@ -1,0 +1,19 @@
+{
+  "name": "daee-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./dist/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "mongodb": "^5.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.13",
+    "@vercel/node": "^3.2.26",
+    "typescript": "^5.9.2",
+    "vercel": "^47.0.5"
+  }
+}

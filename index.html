@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marcação DAEE</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <script src="scripts/form.js" defer></script>
+</head>
+<body>
+  <!-- Cabeçalho -->
+  <header class="header-container">
+    <img src="/images/logo.png" alt="Logo DAEE" class="logo">
+    <h1 class="title">Marcação DAEE</h1>
+  </header>
+
+  <!-- Formulário -->
+  <main class="form-container">
+    <form id="registroForm">
+      <!-- Data -->
+      <div class="form-group">
+        <label for="data">Data da Coleta</label>
+        <input type="date" id="data" name="data">
+      </div>
+
+      <!-- Nível do Rio (manhã) -->
+      <div class="form-group">
+        <label for="nivelManha">Nível do Rio (Manhã) em metros</label>
+        <input type="number" id="nivelManha" name="nivelManha" step="0.01" placeholder="Ex: 2.50">
+      </div>
+
+      <!-- Nível do Rio (tarde) -->
+      <div class="form-group">
+        <label for="nivelTarde">Nível do Rio (Tarde) em metros</label>
+        <input type="number" id="nivelTarde" name="nivelTarde" step="0.01" placeholder="Ex: 2.80">
+      </div>
+
+      <!-- Precipitação -->
+      <div class="form-group">
+        <label for="chuvaMM">Chuva (mm)</label>
+        <input type="number" id="chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
+      </div>
+
+      <!-- Tipo de Precipitação -->
+      <div class="form-group">
+        <label for="tipoChuva">Tipo de Precipitação</label>
+        <select id="tipoChuva" name="tipoChuva">
+          <option value="">Selecione</option>
+          <option value="chuva">Chuva</option>
+          <option value="orvalho">Orvalho</option>
+          <option value="geada">Geada</option>
+          <option value="granizo">Granizo</option>
+          <option value="semchuva">Sem Chuva</option>
+        </select>
+      </div>
+
+      <!-- Botões -->
+      <div class="button-group">
+        <button type="reset" class="btn limpar">Limpar</button>
+        <button type="submit" class="btn salvar">Salvar</button>
+        <button type="button" class="btn relatorio" onclick="window.location.href='relatorio.html'">Relatório</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="footer-container">
+    <p>© 2025 - Desenvolvido por <a href="https://github.com/claudiohpo" class="link-branco" target="_blank" rel="noopener">Cláudio
+        Oliveira</a></p>
+  </footer>
+
+  <script>
+    // Define a data de hoje no campo de data automaticamente
+    const dataInput = document.getElementById('data');
+    const hoje = new Date().toISOString().split('T')[0];
+    dataInput.value = hoje;
+    dataInput.placeholder = hoje;
+  </script>
+</body>
+</html>
