@@ -59,6 +59,20 @@ async function handler(req, res) {
                 updateDoc.tipoChuva = String(body.tipoChuva);
             }
             updateDoc.updatedAt = new Date();
+            if (body.duracaoHoras !== undefined) {
+                const h = Number(body.duracaoHoras);
+                if (!Number.isInteger(h) || h < 0 || h > 23) {
+                    return res.status(400).json({ error: "Campo 'duracaoHoras' inválido (0-23)." });
+                }
+                updateDoc.duracaoHoras = h;
+            }
+            if (body.duracaoMinutos !== undefined) {
+                const m = Number(body.duracaoMinutos);
+                if (!Number.isInteger(m) || m < 0 || m > 59) {
+                    return res.status(400).json({ error: "Campo 'duracaoMinutos' inválido (0-59)." });
+                }
+                updateDoc.duracaoMinutos = m;
+            }
             if (Object.keys(updateDoc).length === 1) { // só updatedAt
                 return res.status(400).json({ error: 'Nenhum campo para atualizar' });
             }

@@ -40,6 +40,23 @@ async function handler(req, res) {
             if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(body.tipoChuva)) {
                 return res.status(400).json({ error: "Tipo de precipitação inválido" });
             }
+            // parse e validação de duração (opcional)
+            const duracaoHorasNum = body.duracaoHoras !== undefined && body.duracaoHoras !== null
+                ? Number(body.duracaoHoras)
+                : undefined;
+            const duracaoMinutosNum = body.duracaoMinutos !== undefined && body.duracaoMinutos !== null
+                ? Number(body.duracaoMinutos)
+                : undefined;
+            if (duracaoHorasNum !== undefined) {
+                if (!Number.isInteger(duracaoHorasNum) || duracaoHorasNum < 0 || duracaoHorasNum > 23) {
+                    return res.status(400).json({ error: "Campo 'duracaoHoras' inválido (0-23)." });
+                }
+            }
+            if (duracaoMinutosNum !== undefined) {
+                if (!Number.isInteger(duracaoMinutosNum) || duracaoMinutosNum < 0 || duracaoMinutosNum > 59) {
+                    return res.status(400).json({ error: "Campo 'duracaoMinutos' inválido (0-59)." });
+                }
+            }
             const doc = {
                 date: body.date,
                 dateFormatted: dateInfo.dateFormatted,
@@ -50,6 +67,8 @@ async function handler(req, res) {
                 tipoChuva: body.tipoChuva || '',
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                duracaoHoras: duracaoHorasNum,
+                duracaoMinutos: duracaoMinutosNum,
             };
             const result = await collection.insertOne(doc);
             const inserted = await collection.findOne({ _id: result.insertedId });
