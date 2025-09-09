@@ -23,16 +23,19 @@
         <table id="table-register">
           <thead>
             <tr>
-              <th></th>
-              <th>Data</th>
-              <th>Nível Manhã</th>
-              <th>Nível Tarde</th>
-              <th>Chuva (mm)</th>
-              <th>Tipo de Precipitação</th>
+              <th rowspan="2"></th>
+              <th rowspan="2">Data</th>
+              <th colspan="2">Nível do Rio</th>
+              <th rowspan="2">Chuva (mm)</th>
+              <th rowspan="2">Tipo de Precipitação</th>
+            </tr>
+            <tr>
+              <th>Manhã</th>
+              <th>Tarde</th>
             </tr>
           </thead>
           <tbody>
-            <!-- preenchido pelo JS -->
+            <!-- Aqui entram os registros gerados pelo JavaScript -->
           </tbody>
         </table>
       </div>
@@ -51,5 +54,55 @@
     <p>© 2025 - Desenvolvido por <a href="https://github.com/claudiohpo" class="link-branco" target="_blank" rel="noopener">Cláudio
         Oliveira</a></p>
   </footer>
+
+  <!-- MOVA ESTE BLOCO para o fim do <body> (fora de .report-card) -->
+<div id="edit-modal" class="modal" aria-hidden="true">
+  <form id="edit-form" class="modal-form" novalidate>
+    <h2 class="modal-title">Editar Registro</h2>
+
+    <input type="hidden" id="edit-id" name="_id">
+
+    <div class="form-group">
+      <label for="edit-date">Data da Coleta</label>
+      <input type="date" id="edit-date" name="date" required>
+    </div>
+
+    <div class="form-group">
+      <label for="edit-nivelManha">Nível do Rio (Manhã) em metros</label>
+      <input type="number" id="edit-nivelManha" name="nivelManha" step="0.01" placeholder="Ex: 2.50">
+    </div>
+
+    <div class="form-group">
+      <label for="edit-nivelTarde">Nível do Rio (Tarde) em metros</label>
+      <input type="number" id="edit-nivelTarde" name="nivelTarde" step="0.01" placeholder="Ex: 2.80">
+    </div>
+
+    <div class="form-group">
+      <label for="edit-chuvaMM">Chuva (mm)</label>
+      <input type="number" id="edit-chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
+    </div>
+
+    <div class="form-group">
+      <label for="edit-tipoChuva">Tipo de Precipitação</label>
+      <select id="edit-tipoChuva" name="tipoChuva">
+        <option value="">Selecione</option>
+        <option value="Chuva">Chuva</option>
+        <option value="Trovoada">Trovoada</option>
+        <option value="Orvalho">Orvalho</option>
+        <option value="Nevoeiro">Nevoeiro</option>
+        <option value="Granizo">Granizo</option>
+        <option value="Geada">Geada</option>
+        <option value="Céu Claro">Céu Claro</option>
+      </select>
+    </div>
+
+    <div class="modal-buttons">
+      <button type="button" id="cancel-edit" class="btn limpar">Cancelar</button>
+      <button type="submit" class="btn salvar">Salvar</button>
+    </div>
+  </form>
+</div>
+<!-- FIM bloco do modal -->
+
 </body>
 </html>

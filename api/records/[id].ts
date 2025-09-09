@@ -1,6 +1,19 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getCollection } from '../_lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { normalizeDateToServer } from '../_lib/dateHelpers';
+
+// 🔹 Tipos de precipitação permitidos
+const TIPOS_PRECIPITACAO = [
+  "Chuva",
+  "Trovoada",
+  "Orvalho",
+  "Nevoeiro",
+  "Granizo",
+  "Geada",
+  "Céu Claro",
+  ""
+];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -26,11 +39,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'PUT') {
       const body = req.body as Record<string, unknown>;
       const updateDoc: Record<string, unknown> = {};
-      if (body.date) updateDoc.date = body.date;
+
+      if (body.date) {
+        // preserva o valor original e cria dateFormatted/dateISO
+        const dateInfo = normalizeDateToServer(body.date);
+        if (!dateInfo) return res.status(400).json({ error: 'Formato de data inválido' });
+        updateDoc.date = body.date;
+        updateDoc.dateFormatted = dateInfo.dateFormatted;
+        updateDoc.dateISO = dateInfo.dateISO;
+      }
+
       if (body.nivelManha !== undefined) updateDoc.nivelManha = Number(body.nivelManha);
       if (body.nivelTarde !== undefined) updateDoc.nivelTarde = Number(body.nivelTarde);
       if (body.chuvaMM !== undefined) updateDoc.chuvaMM = Number(body.chuvaMM);
-      if (body.tipoChuva !== undefined) updateDoc.tipoChuva = String(body.tipoChuva);
+      if (body.tipoChuva !== undefined) {
+        if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(String(body.tipoChuva))) {
+          return res.status(400).json({ error: "Tipo de precipitação inválido" });
+        }
+        updateDoc.tipoChuva = String(body.tipoChuva);
+      }
+
       updateDoc.updatedAt = new Date();
 
       if (Object.keys(updateDoc).length === 1) { // só updatedAt

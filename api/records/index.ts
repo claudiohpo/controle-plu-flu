@@ -1,9 +1,24 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getCollection } from '../_lib/mongodb';
 import { Document } from 'mongodb';
+import { normalizeDateToServer } from '../_lib/dateHelpers';
+
+// 🔹 Tipos de precipitação permitidos
+const TIPOS_PRECIPITACAO = [
+  "Chuva",
+  "Trovoada",
+  "Orvalho",
+  "Nevoeiro",
+  "Granizo",
+  "Geada",
+  "Céu Claro",
+  ""
+];
 
 interface Registro extends Document {
-  date: string;         // "YYYY-MM-DD"
+  date?: string;         // original recebida (YYYY-MM-DD ou ISO)
+  dateFormatted?: string; // DD-MM-YYYY (para exibir)
+  dateISO?: string;       // ISO (para consultas/ordenacao)
   nivelManha: number;
   nivelTarde: number;
   chuvaMM: number;
@@ -23,16 +38,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const collection = await getCollection<Registro>();
 
     if (req.method === 'GET') {
-      const docs = await collection.find().sort({ date: -1, createdAt: -1 }).toArray();
+      // ordena por dateISO (se existir) para garantir ordenacao temporal correta
+      const docs = await collection.find().sort({ dateISO: -1, createdAt: -1 }).toArray();
       return res.status(200).json(docs);
     }
 
     if (req.method === 'POST') {
       const body = req.body as Partial<Registro>;
-      if (!body?.date) return res.status(400).json({ error: "Campo 'date' é obrigatório (YYYY-MM-DD)" });
+      if (!body?.date) return res.status(400).json({ error: "Campo 'date' é obrigatório (YYYY-MM-DD ou ISO)" });
+
+      // normaliza/gera dateFormatted e dateISO
+      const dateInfo = normalizeDateToServer(body.date);
+      if (!dateInfo) return res.status(400).json({ error: "Formato de data inválido" });
+
+      // 🔹 validação do tipo de precipitação
+      if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(body.tipoChuva)) {
+        return res.status(400).json({ error: "Tipo de precipitação inválido" });
+      }
 
       const doc: Registro = {
         date: body.date,
+        dateFormatted: dateInfo.dateFormatted,
+        dateISO: dateInfo.dateISO,
         nivelManha: Number(body.nivelManha) || 0,
         nivelTarde: Number(body.nivelTarde) || 0,
         chuvaMM: Number(body.chuvaMM) || 0,
