@@ -164,3 +164,73 @@
   .modal-content { padding: 12px; }
   .modal-buttons { flex-direction: column-reverse; }
 }
+
+/* wrapper para permitir rolagem horizontal respeitando o container */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto; /* permite rolagem horizontal em telas pequenas */
+  -webkit-overflow-scrolling: touch; /* rolagem suave no iOS */
+}
+
+/* tabela responsiva */
+.table-wrapper table {
+  width: 100%;
+  min-width: 720px; /* ajuste: largura mínima que abre a rolagem; mude se quiser */
+  border-collapse: collapse;
+  table-layout: fixed; /* importante para limitar larguras */
+}
+
+/* estilo geral de células */
+.table-wrapper th,
+.table-wrapper td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e6e6e6;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;       /* evita quebra dentro das células por padrão */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* mostra "..." quando o texto estoura */
+}
+
+/* Colunas numéricas centralizadas / direita e sem truncar com decimais */
+.table-wrapper td.col-num {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Datas/duração compactas */
+.table-wrapper td.col-date,
+.table-wrapper td.col-dur {
+  max-width: 8ch; /* cabe até ~8 caracteres (ex: 02-09-2025 ou 02:32) */
+}
+
+/* Tipo (curto) */
+.table-wrapper td.col-tipo {
+  max-width: 12ch;
+}
+
+/* Observações: permitir quebra e mostrar mais conteúdo (se necessário) */
+.table-wrapper td.col-obs {
+  white-space: normal;      /* permitir quebra de linha para observacoes */
+  max-width: 30ch;          /* limite visual; ajuste como quiser */
+  word-break: break-word;
+  text-overflow: clip;
+}
+
+/* cabeçalho fixo opcional (se quiser fazer sticky) */
+/* .table-wrapper thead th { position: sticky; top: 0; background: #fff; z-index: 2; } */
+
+/* MOBILE tweaks */
+@media (max-width: 640px) {
+  .table-wrapper table { min-width: 600px; } /* mantém rolagem horizontal porém reduz min-width */
+  .table-wrapper th, .table-wrapper td { padding: 6px 8px; font-size: 14px; }
+}
+
+/* Acessibilidade visual ao tocar - efeito leve */
+.table-wrapper td[role="clickable"] {
+  cursor: pointer;
+}
+.table-wrapper td[role="clickable"]:active {
+  background: rgba(0,0,0,0.03);
+}

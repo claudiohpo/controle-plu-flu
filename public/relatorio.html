@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
   <link rel="stylesheet" href="styles/relatorio.css">
   <script src="scripts/relatorio.js" defer></script>
 </head>
+
 <body>
   <!-- Cabeçalho (mesmo do index) -->
   <header class="header-container">
@@ -20,25 +22,27 @@
     <!-- bloco com estilo similar ao form do index, mas maior para tabela -->
     <div class="report-card">
       <div class="table-responsive">
-        <table id="table-register">
-          <thead>
-            <tr>
-              <th rowspan="2"></th>
-              <th rowspan="2">Data</th>
-              <th colspan="2">Nível do Rio</th>
-              <th rowspan="2">Chuva (mm)</th>
-              <th rowspan="2">Duração (hh:mm)</th>
-              <th rowspan="2">Tipo de Precipitação</th>
-            </tr>
-            <tr>
-              <th>Manhã</th>
-              <th>Tarde</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Aqui entram os registros gerados pelo JavaScript -->
-          </tbody>
-        </table>
+        <div class="table-wrapper">
+          <table id="table-register">
+            <thead>
+              <tr>
+                <th rowspan="2"></th>
+                <th rowspan="2">Data</th>
+                <th colspan="2">Nível do Rio</th>
+                <th rowspan="2">Chuva (mm)</th>
+                <th rowspan="2">Duração (hh:mm)</th>
+                <th rowspan="2">Tipo de Precipitação</th>
+              </tr>
+              <tr>
+                <th>Manhã</th>
+                <th>Tarde</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Aqui entram os registros gerados pelo JavaScript -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Botões dentro do mesmo bloco (mantém alinhamento e responsividade como no index) -->
@@ -52,38 +56,39 @@
 
   <!-- Rodapé (mesmo do index) -->
   <footer class="footer-container">
-    <p>© 2025 - Desenvolvido por <a href="https://github.com/claudiohpo" class="link-branco" target="_blank" rel="noopener">Cláudio
+    <p>© 2025 - Desenvolvido por <a href="https://github.com/claudiohpo" class="link-branco" target="_blank"
+        rel="noopener">Cláudio
         Oliveira</a></p>
   </footer>
 
   <!-- MOVA ESTE BLOCO para o fim do <body> (fora de .report-card) -->
-<div id="edit-modal" class="modal" aria-hidden="true">
-  <form id="edit-form" class="modal-form" novalidate>
-    <h2 class="modal-title">Editar Registro</h2>
+  <div id="edit-modal" class="modal" aria-hidden="true">
+    <form id="edit-form" class="modal-form" novalidate>
+      <h2 class="modal-title">Editar Registro</h2>
 
-    <input type="hidden" id="edit-id" name="_id">
+      <input type="hidden" id="edit-id" name="_id">
 
-    <div class="form-group">
-      <label for="edit-date">Data da Coleta</label>
-      <input type="date" id="edit-date" name="date" required>
-    </div>
+      <div class="form-group">
+        <label for="edit-date">Data da Coleta</label>
+        <input type="date" id="edit-date" name="date" required>
+      </div>
 
-    <div class="form-group">
-      <label for="edit-nivelManha">Nível do Rio (Manhã) em metros</label>
-      <input type="number" id="edit-nivelManha" name="nivelManha" step="0.01" placeholder="Ex: 2.50">
-    </div>
+      <div class="form-group">
+        <label for="edit-nivelManha">Nível do Rio (Manhã) em metros</label>
+        <input type="number" id="edit-nivelManha" name="nivelManha" step="0.01" placeholder="Ex: 2.50">
+      </div>
 
-    <div class="form-group">
-      <label for="edit-nivelTarde">Nível do Rio (Tarde) em metros</label>
-      <input type="number" id="edit-nivelTarde" name="nivelTarde" step="0.01" placeholder="Ex: 2.80">
-    </div>
+      <div class="form-group">
+        <label for="edit-nivelTarde">Nível do Rio (Tarde) em metros</label>
+        <input type="number" id="edit-nivelTarde" name="nivelTarde" step="0.01" placeholder="Ex: 2.80">
+      </div>
 
-    <div class="form-group">
-      <label for="edit-chuvaMM">Chuva (mm)</label>
-      <input type="number" id="edit-chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
-    </div>
+      <div class="form-group">
+        <label for="edit-chuvaMM">Chuva (mm)</label>
+        <input type="number" id="edit-chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
+      </div>
 
-    <!-- Duração no modal de edição -->
+      <!-- Duração no modal de edição -->
       <div class="form-group-horas">
         <label for="edit-duracaoHoras">Hora(s):</label>
         <input type="number" id="edit-duracaoHoras" step="1" min="0" max="23" placeholder="02">
@@ -92,27 +97,28 @@
         <input type="number" id="edit-duracaoMinutos" step="1" min="0" max="59" placeholder="32">
       </div>
 
-    <div class="form-group">
-      <label for="edit-tipoChuva">Tipo de Precipitação</label>
-      <select id="edit-tipoChuva" name="tipoChuva">
-        <option value="">Selecione</option>
-        <option value="Chuva">Chuva</option>
-        <option value="Trovoada">Trovoada</option>
-        <option value="Orvalho">Orvalho</option>
-        <option value="Nevoeiro">Nevoeiro</option>
-        <option value="Granizo">Granizo</option>
-        <option value="Geada">Geada</option>
-        <option value="Céu Claro">Céu Claro</option>
-      </select>
-    </div>
+      <div class="form-group">
+        <label for="edit-tipoChuva">Tipo de Precipitação</label>
+        <select id="edit-tipoChuva" name="tipoChuva">
+          <option value="">Selecione</option>
+          <option value="Chuva">Chuva</option>
+          <option value="Trovoada">Trovoada</option>
+          <option value="Orvalho">Orvalho</option>
+          <option value="Nevoeiro">Nevoeiro</option>
+          <option value="Granizo">Granizo</option>
+          <option value="Geada">Geada</option>
+          <option value="Céu Claro">Céu Claro</option>
+        </select>
+      </div>
 
-    <div class="modal-buttons">
-      <button type="button" id="cancel-edit" class="btn limpar">Cancelar</button>
-      <button type="submit" class="btn salvar">Salvar</button>
-    </div>
-  </form>
-</div>
-<!-- FIM bloco do modal -->
+      <div class="modal-buttons">
+        <button type="button" id="cancel-edit" class="btn limpar">Cancelar</button>
+        <button type="submit" class="btn salvar">Salvar</button>
+      </div>
+    </form>
+  </div>
+  <!-- FIM bloco do modal -->
 
 </body>
+
 </html>

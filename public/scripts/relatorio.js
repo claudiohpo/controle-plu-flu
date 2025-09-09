@@ -3,6 +3,13 @@ const doFetch = (url, opts = {}) => {
   return fetch(url, opts);
 };
 
+function showFullText(text) {
+  // versão simples e compatível com mobile - substitua por modal custom se quiser
+  if (!text) return;
+  alert(text);
+}
+
+
 // formata para "DD-MM-AAAA"
 function formatDate(input) {
   if (!input) return "";
