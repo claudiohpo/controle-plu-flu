@@ -33,8 +33,8 @@ if (form) {
     const tipo = document.getElementById('tipoChuva')?.value;
     if (tipo !== undefined) payload.tipoChuva = tipo;
 
-    const obs = document.getElementById('observacoes')?.value;
-    if (obs !== undefined) payload.observacoes = obs;
+    // const obs = document.getElementById('observacoes')?.value;
+    // if (obs !== undefined) payload.observacoes = obs;
 
     // duracao (front validation)
     const duracaoHorasRaw = document.getElementById('duracaoHoras')?.value;

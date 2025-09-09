@@ -73,7 +73,7 @@ function extractId(item) {
   return JSON.stringify(id);
 }
 
-function showEmpty(tbody, colCount = 8) { // ajustado para 8 colunas
+function showEmpty(tbody, colCount = 7) { // ajustado para 8 colunas
   tbody.innerHTML = "";
   const tr = document.createElement("tr");
   const td = document.createElement("td");
