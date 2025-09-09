@@ -130,15 +130,22 @@
     <form id="pdf-form" class="modal-content modal-form" novalidate>
       <h2 class="modal-title">Gerar Relatório em PDF</h2>
 
-      <div class="form-group">
+      <div class="form-group date-wrapper">
         <label for="pdf-start">Data início</label>
-        <input type="date" id="pdf-start" name="start" required placeholder="dd/mm/aaaa">
+        <div class="date-input-wrap">
+          <input type="date" id="pdf-start" name="start" required>
+          <span class="date-placeholder">dd/mm/aaaa</span>
+        </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group date-wrapper">
         <label for="pdf-end">Data fim</label>
-        <input type="date" id="pdf-end" name="end" required placeholder="dd/mm/aaaa">
+        <div class="date-input-wrap">
+          <input type="date" id="pdf-end" name="end" required>
+          <span class="date-placeholder">dd/mm/aaaa</span>
+        </div>
       </div>
+
 
       <div class="modal-buttons">
         <button type="button" id="pdf-cancel" class="btn limpar">Cancelar</button>

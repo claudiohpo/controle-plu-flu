@@ -291,3 +291,36 @@
   background: #f7f7f7;
   font-weight: 600;
 }
+
+/* .date-input-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.date-input-wrap input[type="date"] {
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+} */
+
+/* placeholder sobreposto */
+.date-input-wrap .date-placeholder {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; /* permite clicar no input por baixo */
+  color: #9aa4b2;
+  font-size: 0.95rem;
+  z-index: 1;
+  transition: opacity 0.12s ease;
+}
+
+/* esconde quando input tem valor (JS também controla isso) */
+.date-input-wrap.hide-placeholder .date-placeholder {
+  opacity: 0;
+  visibility: hidden;
+}
