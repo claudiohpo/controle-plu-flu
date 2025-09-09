@@ -207,7 +207,7 @@
 
 /* Tipo (curto) */
 .table-wrapper td.col-tipo {
-  max-width: 12ch;
+  max-width: 30ch;
 }
 
 /* Observações: permitir quebra e mostrar mais conteúdo (se necessário) */
