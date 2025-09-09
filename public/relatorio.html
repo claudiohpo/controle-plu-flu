@@ -7,6 +7,7 @@
   <title>Controle - SP Águas</title>
   <link rel="stylesheet" href="styles/style.css">
   <link rel="stylesheet" href="styles/relatorio.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js" defer></script>
   <script src="scripts/relatorio.js" defer></script>
 </head>
 
@@ -28,7 +29,7 @@
               <tr>
                 <th rowspan="2"></th>
                 <th rowspan="2">Data</th>
-                <th colspan="2">Nível do Rio  <span class="unidade">(mt)</span></th>
+                <th colspan="2">Nível do Rio <span class="unidade">(mt)</span></th>
                 <th rowspan="2">Chuva<br><span class="unidade">(mm)</span></th>
                 <th rowspan="2">Duração<br><span class="unidade">(hh:mm)</span></th>
                 <th rowspan="2">Fenômenos</th>
@@ -89,6 +90,9 @@
         <input type="number" id="edit-chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
       </div>
 
+
+
+
       <!-- Duração no modal de edição -->
       <div class="form-group-horas">
         <label for="edit-duracaoHoras">Hora(s):</label>
@@ -119,6 +123,30 @@
     </form>
   </div>
   <!-- FIM bloco do modal -->
+
+  <!-- Modal Gerar PDF (fora do edit-modal, preferencialmente antes do fechamento do body) -->
+  <div id="pdf-modal" class="modal" aria-hidden="true" style="display:none;">
+    <!-- add class modal-content para centralizar e estilizar igual ao modal de edição -->
+    <form id="pdf-form" class="modal-content modal-form" novalidate>
+      <h2 class="modal-title">Gerar PDF — intervalo de datas</h2>
+
+      <div class="form-group">
+        <label for="pdf-start">Data início</label>
+        <input type="date" id="pdf-start" name="start" required>
+      </div>
+
+      <div class="form-group">
+        <label for="pdf-end">Data fim</label>
+        <input type="date" id="pdf-end" name="end" required>
+      </div>
+
+      <div class="modal-buttons">
+        <button type="button" id="pdf-cancel" class="btn limpar">Cancelar</button>
+        <button type="button" id="pdf-generate" class="btn salvar">Gerar PDF</button>
+      </div>
+    </form>
+  </div>
+  <!-- Fim modal Gerar PDF -->
 
 </body>
 

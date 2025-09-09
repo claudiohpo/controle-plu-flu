@@ -23,9 +23,35 @@ async function handler(req, res) {
         if (req.method === 'OPTIONS')
             return res.status(200).end();
         const collection = await (0, mongodb_1.getCollection)();
+        // if (req.method === 'GET') {
+        //   // ordena por dateISO (se existir) para garantir ordenacao temporal correta
+        //   const docs = await collection.find().sort({ dateISO: -1, createdAt: -1 }).toArray();
+        //   return res.status(200).json(docs);
+        // }
         if (req.method === 'GET') {
-            // ordena por dateISO (se existir) para garantir ordenacao temporal correta
-            const docs = await collection.find().sort({ dateISO: -1, createdAt: -1 }).toArray();
+            // aceita query params start e end no formato "YYYY-MM-DD" ou ISO
+            const query = req.query || {};
+            const startRaw = Array.isArray(query.start) ? query.start[0] : query.start;
+            const endRaw = Array.isArray(query.end) ? query.end[0] : query.end;
+            const filter = {};
+            if (startRaw) {
+                const startInfo = (0, dateHelpers_1.normalizeDateToServer)(startRaw);
+                if (!startInfo)
+                    return res.status(400).json({ error: "Formato de data 'start' inválido" });
+                // >= início do dia (normalizeDateToServer já gera um ISO válido)
+                filter.dateISO = { ...(filter.dateISO || {}), $gte: startInfo.dateISO };
+            }
+            if (endRaw) {
+                const endInfo = (0, dateHelpers_1.normalizeDateToServer)(endRaw);
+                if (!endInfo)
+                    return res.status(400).json({ error: "Formato de data 'end' inválido" });
+                // para incluir o dia inteiro, ajustamos para 23:59:59.999 do dia
+                const endDate = new Date(endInfo.dateISO);
+                endDate.setHours(23, 59, 59, 999);
+                filter.dateISO = { ...(filter.dateISO || {}), $lte: endDate.toISOString() };
+            }
+            // se não vierem start/end, retorna tudo (ordenado)
+            const docs = await collection.find(filter).sort({ dateISO: -1, createdAt: -1 }).toArray();
             return res.status(200).json(docs);
         }
         if (req.method === 'POST') {

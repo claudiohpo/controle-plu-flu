@@ -73,7 +73,8 @@ function extractId(item) {
   return JSON.stringify(id);
 }
 
-function showEmpty(tbody, colCount = 7) { // ajustado para 8 colunas
+function showEmpty(tbody, colCount = 7) {
+  // ajustado para 8 colunas
   tbody.innerHTML = "";
   const tr = document.createElement("tr");
   const td = document.createElement("td");
@@ -256,12 +257,21 @@ function openEditModal(item) {
 
   const el = (id) => document.getElementById(id);
 
-  if (el("edit-nivelManha")) el("edit-nivelManha").value = item.nivelManha != null ? item.nivelManha : "";
-  if (el("edit-nivelTarde")) el("edit-nivelTarde").value = item.nivelTarde != null ? item.nivelTarde : "";
-  if (el("edit-chuvaMM")) el("edit-chuvaMM").value = item.chuvaMM != null ? item.chuvaMM : "";
+  if (el("edit-nivelManha"))
+    el("edit-nivelManha").value =
+      item.nivelManha != null ? item.nivelManha : "";
+  if (el("edit-nivelTarde"))
+    el("edit-nivelTarde").value =
+      item.nivelTarde != null ? item.nivelTarde : "";
+  if (el("edit-chuvaMM"))
+    el("edit-chuvaMM").value = item.chuvaMM != null ? item.chuvaMM : "";
 
-  if (el("edit-duracaoHoras")) el("edit-duracaoHoras").value = item.duracaoHoras != null ? item.duracaoHoras : "";
-  if (el("edit-duracaoMinutos")) el("edit-duracaoMinutos").value = item.duracaoMinutos != null ? item.duracaoMinutos : "";
+  if (el("edit-duracaoHoras"))
+    el("edit-duracaoHoras").value =
+      item.duracaoHoras != null ? item.duracaoHoras : "";
+  if (el("edit-duracaoMinutos"))
+    el("edit-duracaoMinutos").value =
+      item.duracaoMinutos != null ? item.duracaoMinutos : "";
 
   const tipoSelect = document.getElementById("edit-tipoChuva");
   const tipoValRaw = item.tipoChuva ?? "";
@@ -308,7 +318,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnEditar) {
     btnEditar.addEventListener("click", async () => {
-      const selected = document.querySelector('input[name="selecionar"]:checked');
+      const selected = document.querySelector(
+        'input[name="selecionar"]:checked'
+      );
       if (!selected) return alert("Selecione um registro para editar");
       const id = selected.value;
       const item = recordsData.find((r) => extractId(r) === id);
@@ -336,7 +348,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnExcluir) {
     btnExcluir.addEventListener("click", async () => {
-      const selected = document.querySelector('input[name="selecionar"]:checked');
+      const selected = document.querySelector(
+        'input[name="selecionar"]:checked'
+      );
       if (!selected) return alert("Selecione um registro para excluir.");
       const id = selected.value;
       if (!confirm("Confirmar exclusão?")) return;
@@ -462,3 +476,308 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+// ---------- Gerar PDF (modal + lógica) ----------
+document.addEventListener("DOMContentLoaded", () => {
+  // elementos do modal
+  const pdfModal = document.getElementById("pdf-modal");
+  const pdfForm = document.getElementById("pdf-form");
+  const btnPdfOpen = document.querySelector(".btn.pdf"); // botão "Gerar PDF" na página
+  const btnPdfCancel = document.getElementById("pdf-cancel");
+  const btnPdfGenerate = document.getElementById("pdf-generate");
+  const inputStart = document.getElementById("pdf-start");
+  const inputEnd = document.getElementById("pdf-end");
+
+  function openPdfModal() {
+    if (!pdfModal) {
+      console.error("[PDF] pdfModal não encontrado no DOM.");
+      return;
+    }
+    // exibe como flex para respeitar o CSS (.modal[aria-hidden="false"] usa flex)
+    pdfModal.setAttribute("aria-hidden", "false");
+    pdfModal.style.display = "flex";
+    // garante centralização: o conteúdo interno usa .modal-content
+    if (inputStart) inputStart.focus();
+    console.log("[PDF] modal aberto");
+  }
+
+  function closePdfModal() {
+    if (!pdfModal) return;
+    pdfModal.setAttribute("aria-hidden", "true");
+    pdfModal.style.display = "none";
+    if (pdfForm) pdfForm.reset();
+    console.log("[PDF] modal fechado");
+  }
+
+  if (btnPdfOpen) {
+    btnPdfOpen.addEventListener("click", (e) => {
+      e.preventDefault();
+      openPdfModal();
+    });
+  }
+  if (btnPdfCancel) {
+    btnPdfCancel.addEventListener("click", (e) => {
+      e.preventDefault();
+      closePdfModal();
+    });
+  }
+
+  // clicar fora fecha (mesma lógica do modal de edição)
+  if (pdfModal) {
+    pdfModal.addEventListener("click", (e) => {
+      if (e.target === pdfModal) {
+        closePdfModal();
+      }
+    });
+  }
+
+  // ESC fecha
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (pdfModal && pdfModal.getAttribute("aria-hidden") === "false")
+        closePdfModal();
+    }
+  });
+
+  // Helper: formata duração hh:mm
+  function formatDuration(item) {
+    const h =
+      item.duracaoHoras || item.duracaoHoras === 0
+        ? Number(item.duracaoHoras)
+        : null;
+    const m =
+      item.duracaoMinutos || item.duracaoMinutos === 0
+        ? Number(item.duracaoMinutos)
+        : null;
+    const hh =
+      h !== null && !Number.isNaN(h) ? String(h).padStart(2, "0") : "00";
+    const mm =
+      m !== null && !Number.isNaN(m) ? String(m).padStart(2, "0") : "00";
+    return `${hh}:${mm}`;
+  }
+
+  // Helper: tenta pegar dateFormatted ou formatar ISO curto (mantive '-' aqui)
+  function getDateForRow(item) {
+    if (item.dateFormatted) return item.dateFormatted;
+    if (item.dateISO) {
+      const d = new Date(item.dateISO);
+      return (
+        String(d.getDate()).padStart(2, "0") +
+        "-" +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        d.getFullYear()
+      );
+    }
+    return "";
+  }
+
+  // helper: formata YYYY-MM-DD -> DD/MM/YYYY (para título)
+  function toDisplayDateSlash(input) {
+    if (!input) return "";
+    if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      const [yyyy, mm, dd] = input.split("-");
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    if (typeof input === "string" && /^\d{2}-\d{2}-\d{4}$/.test(input)) {
+      return input.replace(/-/g, "/");
+    }
+    const d = new Date(input);
+    if (!Number.isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return String(input);
+  }
+
+  // helper: formata YYYY-MM-DD -> DD-MM-YYYY (para nome do arquivo)
+  function toFileDateHyphen(input) {
+    if (!input) return "";
+    if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      const [yyyy, mm, dd] = input.split("-");
+      return `${dd}-${mm}-${yyyy}`;
+    }
+    if (typeof input === "string" && /^\d{2}-\d{2}-\d{4}$/.test(input)) {
+      return input;
+    }
+    const d = new Date(input);
+    if (!Number.isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    }
+    return String(input).replace(/\//g, "-");
+  }
+
+  async function generatePdfHandler() {
+    if (!inputStart || !inputEnd)
+      return alert("Inputs do modal não encontrados");
+    const start = inputStart.value;
+    const end = inputEnd.value;
+    if (!start || !end) return alert("Escolha as datas de início e fim.");
+    if (start > end)
+      return alert("A data inicial não pode ser posterior à data final.");
+
+    try {
+      // solicita os dados ao backend (ajuste: endpoint api/records aceita start & end)
+      const qs = `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(
+        end
+      )}`;
+      const res = await doFetch(`/api/records${qs}`);
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(body || res.statusText);
+      }
+      const data = await res.json();
+
+      // monta tabela (idêntica à vista no HTML — cabeçalhos em duas linhas)
+      const container = document.createElement("div");
+      container.style.padding = "12px"; // margem interna para o PDF
+
+      const title = document.createElement("h3");
+      title.textContent = `Marcações de: ${toDisplayDateSlash(
+        start
+      )} a ${toDisplayDateSlash(end)}`;
+      // estilos solicitados
+      title.style.textAlign = "center";
+      title.style.marginBottom = "16px";
+      title.style.fontWeight = "bold";
+      title.style.fontSize = "18px";
+
+      container.appendChild(title);
+
+      const table = document.createElement("table");
+      table.className = "pdf-table";
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+      table.style.fontSize = "12px";
+      // centraliza por padrão as células (redundante com td.style, mas seguro)
+      table.style.textAlign = "center";
+
+      const thead = document.createElement("thead");
+      thead.innerHTML = `
+        <tr>
+          <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Data</th>
+          <th colspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Nível do Rio <span class="unidade">(mt)</span></th>
+          <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Chuva<br><span class="unidade">(mm)</span></th>
+          <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Duração<br><span class="unidade">(hh:mm)</span></th>
+          <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Fenômenos</th>
+        </tr>
+        <tr>
+          <th style="border:1px solid #ccc;padding:6px;text-align:center;">Manhã</th>
+          <th style="border:1px solid #ccc;padding:6px;text-align:center;">Tarde</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      // ordena asc por dateISO para leitura natural (opcional)
+      data.sort((a, b) => {
+        const da = a.dateISO ? new Date(a.dateISO).getTime() : 0;
+        const db = b.dateISO ? new Date(b.dateISO).getTime() : 0;
+        return da - db;
+      });
+
+      data.forEach((item) => {
+        const tr = document.createElement("tr");
+
+        // Data
+        const tdDate = document.createElement("td");
+        tdDate.style.border = "1px solid #ccc";
+        tdDate.style.padding = "6px";
+        tdDate.style.textAlign = "center";
+        tdDate.textContent = getDateForRow(item);
+        tr.appendChild(tdDate);
+
+        // Manhã
+        const tdManha = document.createElement("td");
+        tdManha.style.border = "1px solid #ccc";
+        tdManha.style.padding = "6px";
+        tdManha.style.textAlign = "center";
+        tdManha.textContent =
+          item.nivelManha != null ? String(item.nivelManha) : "";
+        tr.appendChild(tdManha);
+
+        // Tarde
+        const tdTarde = document.createElement("td");
+        tdTarde.style.border = "1px solid #ccc";
+        tdTarde.style.padding = "6px";
+        tdTarde.style.textAlign = "center";
+        tdTarde.textContent =
+          item.nivelTarde != null ? String(item.nivelTarde) : "";
+        tr.appendChild(tdTarde);
+
+        // Chuva
+        const tdChuva = document.createElement("td");
+        tdChuva.style.border = "1px solid #ccc";
+        tdChuva.style.padding = "6px";
+        tdChuva.style.textAlign = "center";
+        tdChuva.textContent = item.chuvaMM != null ? String(item.chuvaMM) : "";
+        tr.appendChild(tdChuva);
+
+        // Duração
+        const tdDur = document.createElement("td");
+        tdDur.style.border = "1px solid #ccc";
+        tdDur.style.padding = "6px";
+        tdDur.style.textAlign = "center";
+        tdDur.textContent = formatDuration(item);
+        tr.appendChild(tdDur);
+
+        // Fenômenos
+        const tdFen = document.createElement("td");
+        tdFen.style.border = "1px solid #ccc";
+        tdFen.style.padding = "6px";
+        tdFen.style.textAlign = "center";
+        tdFen.textContent = item.tipoChuva || "";
+        tr.appendChild(tdFen);
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+      document.body.appendChild(container); // precisa estar no DOM para html2pdf capturar
+
+      // opções do html2pdf (A4 retrato)
+      const opt = {
+        margin: 10 / 25.4, // 10mm
+        filename: `Marcações_${toFileDateHyphen(start)}_a_${toFileDateHyphen(
+          end
+        )}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait" }
+      };
+
+      // gera e salva
+      await html2pdf().set(opt).from(container).save();
+
+      // limpa
+      document.body.removeChild(container);
+      closePdfModal();
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      alert("Erro ao gerar PDF: " + (err.message || err));
+    }
+  }
+
+  if (btnPdfGenerate) {
+    btnPdfGenerate.addEventListener("click", (e) => {
+      e.preventDefault();
+      generatePdfHandler();
+    });
+  }
+
+  // permite ESC para fechar o modal PDF (redundante mas seguro)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (pdfModal && pdfModal.getAttribute("aria-hidden") === "false")
+        closePdfModal();
+    }
+  });
+});
+// ---------- fim Gerar PDF ----------

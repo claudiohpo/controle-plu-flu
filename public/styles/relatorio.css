@@ -280,3 +280,14 @@
 .table-wrapper td[role="clickable"]:active {
   background: rgba(0, 0, 0, 0.03);
 }
+
+/* Estilos para tabela do PDF gerada no cliente */
+.pdf-table th, .pdf-table td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  font-size: 12px;
+}
+.pdf-table thead th {
+  background: #f7f7f7;
+  font-weight: 600;
+}
