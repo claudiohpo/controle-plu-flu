@@ -1,0 +1,105 @@
+/* RELATÓRIO — estilos locais que não sobrescrevem o style.css global */
+
+/* report-card: estilo semelhante ao form do index, porém mais largo */
+.report-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1100px; /* largura maior para tabelas */
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.08);
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+/* wrapper responsivo (mantém comportamento do exemplo) */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* tabela: usar 100% do container (não max-content) — isso preserva responsividade */
+#table-register {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* células: aparência limpa, sem quebrar layout */
+#table-register th,
+#table-register td {
+  border: 1px solid #e6edf6;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* cabeçalho visual */
+#table-register thead {
+  background: linear-gradient(180deg,#f3f7fb,#e9f0fb);
+}
+
+#table-register th {
+  font-weight: 700;
+  color: #1b2b4a;
+  text-align: center;
+}
+
+/* linhas pares com leve fundo */
+#table-register tbody tr:nth-child(even) {
+  background-color: #fbfdff;
+}
+
+/* hover */
+#table-register tbody tr:hover {
+  background-color: #f6f9ff;
+}
+
+/* coluna do radio: pequeno e centralizado */
+#table-register td:first-child,
+#table-register th:first-child {
+  width: 48px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Evita que botões herdem flex:1 do .btn globalmente (aplica apenas aqui) */
+.report-card .button-group .btn {
+  flex: 0 0 auto;
+  min-width: 120px;
+  padding: 10px 14px;
+}
+
+/* Mobile: permitir quebra para colunas e manter legibilidade */
+@media (max-width: 720px) {
+  #table-register th,
+  #table-register td {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  .report-card {
+    padding: 14px;
+  }
+}
+
+/* Mobile estreito: permitir wrap e word-break */
+@media (max-width: 420px) {
+  #table-register th,
+  #table-register td {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 12px;
+  }
+
+  /* botões empilhados em mobile */
+  .report-card .button-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .report-card .button-group .btn {
+    width: 100%;
+  }
+}
