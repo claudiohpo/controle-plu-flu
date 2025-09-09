@@ -27,6 +27,7 @@
               <th rowspan="2">Data</th>
               <th colspan="2">Nível do Rio</th>
               <th rowspan="2">Chuva (mm)</th>
+              <th rowspan="2">Duração (hh:mm)</th>
               <th rowspan="2">Tipo de Precipitação</th>
             </tr>
             <tr>
@@ -81,6 +82,15 @@
       <label for="edit-chuvaMM">Chuva (mm)</label>
       <input type="number" id="edit-chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
     </div>
+
+    <!-- Duração no modal de edição -->
+      <div class="form-group-horas">
+        <label for="edit-duracaoHoras">Hora(s):</label>
+        <input type="number" id="edit-duracaoHoras" step="1" min="0" max="23" placeholder="02">
+
+        <label for="edit-duracaoMinutos">Minuto(s):</label>
+        <input type="number" id="edit-duracaoMinutos" step="1" min="0" max="59" placeholder="32">
+      </div>
 
     <div class="form-group">
       <label for="edit-tipoChuva">Tipo de Precipitação</label>

@@ -34,20 +34,29 @@
       <!-- Nível do Rio (manhã) -->
       <div class="form-group">
         <label for="nivelManha">Nível do Rio (Manhã) em metros</label>
-        <input type="number" id="nivelManha" name="nivelManha" step="0.01" placeholder="Ex: 2.50">
+        <input type="number" id="nivelManha" name="nivelManha" step="0.01" placeholder="2.50">
       </div>
 
       <!-- Nível do Rio (tarde) -->
       <div class="form-group">
         <label for="nivelTarde">Nível do Rio (Tarde) em metros</label>
-        <input type="number" id="nivelTarde" name="nivelTarde" step="0.01" placeholder="Ex: 2.80">
+        <input type="number" id="nivelTarde" name="nivelTarde" step="0.01" placeholder="2.80">
       </div>
 
       <!-- Precipitação -->
       <div class="form-group">
         <label for="chuvaMM">Chuva (mm)</label>
-        <input type="number" id="chuvaMM" name="chuvaMM" step="0.1" placeholder="Ex: 5.0">
+        <input type="number" id="chuvaMM" name="chuvaMM" step="0.1" placeholder="5.0">
       </div>
+
+      <!-- Duração da Chuva -->
+       <div class="form-group-horas">
+        <label for="duracaoHoras">Hora(s):</label>
+        <input type="number" id="duracaoHoras" name="duracaoHoras" step="1" min="0" max="23" placeholder="2">
+
+        <label for="duracaoMinutos">Minuto(s):</label>
+        <input type="number" id="duracaoMinutos" name="duracaoMinutos" step="1" min="0" max="59" placeholder="32">
+       </div>
 
       <!-- Tipo de Precipitação -->
       <div class="form-group">

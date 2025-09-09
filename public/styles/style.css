@@ -210,3 +210,23 @@ input:focus, select:focus {
 .table-wrapper {
   overflow-x: auto;
 }
+
+/* Agrupamento para duração da chuva */
+.form-group-horas {
+  display: flex;
+  gap: 15px;               /* espaço entre os elementos */
+  align-items: center;     /* alinha verticalmente no centro */
+  justify-content: space-between; /* centraliza horizontalmente */
+  margin-bottom: 15px;
+}
+
+.form-group-horas label {
+  margin-bottom: 0;        /* remove espaço extra */
+  font-weight: bold;
+}
+
+.form-group-horas input {
+  width: 80px;             /* largura controlada */
+  padding: 8px;
+}
+

@@ -56,6 +56,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: "Tipo de precipitação inválido" });
       }
 
+      // parse e validação de duração (opcional)
+      const duracaoHorasNum = body.duracaoHoras !== undefined && body.duracaoHoras !== null
+        ? Number(body.duracaoHoras)
+        : undefined;
+      const duracaoMinutosNum = body.duracaoMinutos !== undefined && body.duracaoMinutos !== null
+        ? Number(body.duracaoMinutos)
+        : undefined;
+
+      if (duracaoHorasNum !== undefined) {
+        if (!Number.isInteger(duracaoHorasNum) || duracaoHorasNum < 0 || duracaoHorasNum > 23) {
+          return res.status(400).json({ error: "Campo 'duracaoHoras' inválido (0-23)." });
+        }
+      }
+      if (duracaoMinutosNum !== undefined) {
+        if (!Number.isInteger(duracaoMinutosNum) || duracaoMinutosNum < 0 || duracaoMinutosNum > 59) {
+          return res.status(400).json({ error: "Campo 'duracaoMinutos' inválido (0-59)." });
+        }
+      }
+
       const doc: Registro = {
         date: body.date,
         dateFormatted: dateInfo.dateFormatted,
@@ -66,6 +85,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tipoChuva: body.tipoChuva || '',
         createdAt: new Date(),
         updatedAt: new Date(),
+        duracaoHoras: duracaoHorasNum,
+        duracaoMinutos: duracaoMinutosNum,
       };
 
       const result = await collection.insertOne(doc);
