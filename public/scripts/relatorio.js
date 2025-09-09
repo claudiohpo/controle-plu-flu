@@ -9,7 +9,6 @@ function showFullText(text) {
   alert(text);
 }
 
-
 // formata para "DD-MM-AAAA"
 function formatDate(input) {
   if (!input) return "";
@@ -127,6 +126,7 @@ async function loadRecords() {
     data.forEach((item) => {
       const tr = document.createElement("tr");
 
+      // radio/select
       const tdRadio = document.createElement("td");
       const radio = document.createElement("input");
       radio.type = "radio";
@@ -135,7 +135,9 @@ async function loadRecords() {
       tdRadio.appendChild(radio);
       tr.appendChild(tdRadio);
 
+      // Data
       const dateTd = document.createElement("td");
+      dateTd.className = "col-date";
       const rawDate =
         item.dateFormatted ??
         item.date ??
@@ -144,30 +146,42 @@ async function loadRecords() {
         item.horario ??
         "";
       dateTd.textContent = rawDate ? formatDate(rawDate) : "";
+      dateTd.title = dateTd.textContent || "";
       tr.appendChild(dateTd);
 
+      // Nivel manhã
       const nivelManhaTd = document.createElement("td");
+      nivelManhaTd.className = "col-num";
       nivelManhaTd.textContent =
         typeof item.nivelManha === "number"
           ? item.nivelManha.toFixed(2)
           : item.nivelManha ?? "";
+      nivelManhaTd.title = nivelManhaTd.textContent || "";
       tr.appendChild(nivelManhaTd);
 
+      // Nivel tarde
       const nivelTardeTd = document.createElement("td");
+      nivelTardeTd.className = "col-num";
       nivelTardeTd.textContent =
         typeof item.nivelTarde === "number"
           ? item.nivelTarde.toFixed(2)
           : item.nivelTarde ?? "";
+      nivelTardeTd.title = nivelTardeTd.textContent || "";
       tr.appendChild(nivelTardeTd);
 
+      // Chuva (mm)
       const chuvaMMTd = document.createElement("td");
+      chuvaMMTd.className = "col-num";
       chuvaMMTd.textContent =
         typeof item.chuvaMM === "number"
           ? item.chuvaMM.toFixed(1)
           : item.chuvaMM ?? "";
+      chuvaMMTd.title = chuvaMMTd.textContent || "";
       tr.appendChild(chuvaMMTd);
 
+      // Duração (hh:mm)
       const duracaoTd = document.createElement("td");
+      duracaoTd.className = "col-dur";
       if (item.duracaoHoras != null || item.duracaoMinutos != null) {
         const h =
           item.duracaoHoras != null
@@ -181,11 +195,30 @@ async function loadRecords() {
       } else {
         duracaoTd.textContent = "";
       }
+      duracaoTd.title = duracaoTd.textContent || "";
       tr.appendChild(duracaoTd);
 
+      // Tipo
       const tipoChuvaTd = document.createElement("td");
+      tipoChuvaTd.className = "col-tipo";
       tipoChuvaTd.textContent = item.tipoChuva ?? "";
+      tipoChuvaTd.title = tipoChuvaTd.textContent || "";
       tr.appendChild(tipoChuvaTd);
+
+      // // Observações (opcional, pode ser observacoes ou observations)
+      // const obsText = item.observacoes ?? item.observations ?? "";
+      // const obsTd = document.createElement("td");
+      // obsTd.className = "col-obs";
+      // obsTd.textContent = obsText;
+      // obsTd.title = obsText || "";
+
+      // Torna clicável no mobile/pequenas telas se o texto for longo
+      // if (obsText && obsText.length > 40) {
+      //   obsTd.setAttribute("role", "clickable");
+      //   obsTd.style.cursor = "pointer";
+      //   obsTd.addEventListener("click", () => showFullText(obsText));
+      // }
+      // tr.appendChild(obsTd);
 
       frag.appendChild(tr);
     });
