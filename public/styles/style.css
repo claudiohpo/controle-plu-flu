@@ -138,6 +138,11 @@ input:focus, select:focus {
   color: white;
 }
 
+.btn.pdf{
+  background-color: #1b2b4a;
+  color: white;
+}
+
 /* Rodapé */
 .footer-container {
   text-align: center;
