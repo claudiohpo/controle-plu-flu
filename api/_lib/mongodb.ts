@@ -10,7 +10,7 @@ declare global {
 }
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.MONGODB_DB || "daee"; // seu banco
+const DB_NAME = process.env.MONGODB_DB || "pluvio"; // seu banco
 export const DEFAULT_COLLECTION = "registros";    // sua collection
 
 if (!MONGODB_URI) {

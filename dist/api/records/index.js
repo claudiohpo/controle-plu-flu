@@ -2,6 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = handler;
 const mongodb_1 = require("../_lib/mongodb");
+const dateHelpers_1 = require("../_lib/dateHelpers");
+// 🔹 Tipos de precipitação permitidos
+const TIPOS_PRECIPITACAO = [
+    "Chuva",
+    "Trovoada",
+    "Orvalho",
+    "Nevoeiro",
+    "Granizo",
+    "Geada",
+    "Céu Claro",
+    ""
+];
 async function handler(req, res) {
     try {
         // CORS básico para dev local
@@ -12,15 +24,26 @@ async function handler(req, res) {
             return res.status(200).end();
         const collection = await (0, mongodb_1.getCollection)();
         if (req.method === 'GET') {
-            const docs = await collection.find().sort({ date: -1, createdAt: -1 }).toArray();
+            // ordena por dateISO (se existir) para garantir ordenacao temporal correta
+            const docs = await collection.find().sort({ dateISO: -1, createdAt: -1 }).toArray();
             return res.status(200).json(docs);
         }
         if (req.method === 'POST') {
             const body = req.body;
             if (!body?.date)
-                return res.status(400).json({ error: "Campo 'date' é obrigatório (YYYY-MM-DD)" });
+                return res.status(400).json({ error: "Campo 'date' é obrigatório (YYYY-MM-DD ou ISO)" });
+            // normaliza/gera dateFormatted e dateISO
+            const dateInfo = (0, dateHelpers_1.normalizeDateToServer)(body.date);
+            if (!dateInfo)
+                return res.status(400).json({ error: "Formato de data inválido" });
+            // 🔹 validação do tipo de precipitação
+            if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(body.tipoChuva)) {
+                return res.status(400).json({ error: "Tipo de precipitação inválido" });
+            }
             const doc = {
                 date: body.date,
+                dateFormatted: dateInfo.dateFormatted,
+                dateISO: dateInfo.dateISO,
                 nivelManha: Number(body.nivelManha) || 0,
                 nivelTarde: Number(body.nivelTarde) || 0,
                 chuvaMM: Number(body.chuvaMM) || 0,

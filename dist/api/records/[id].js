@@ -3,6 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = handler;
 const mongodb_1 = require("../_lib/mongodb");
 const mongodb_2 = require("mongodb");
+const dateHelpers_1 = require("../_lib/dateHelpers");
+// 🔹 Tipos de precipitação permitidos
+const TIPOS_PRECIPITACAO = [
+    "Chuva",
+    "Trovoada",
+    "Orvalho",
+    "Nevoeiro",
+    "Granizo",
+    "Geada",
+    "Céu Claro",
+    ""
+];
 async function handler(req, res) {
     try {
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -25,16 +37,27 @@ async function handler(req, res) {
         if (req.method === 'PUT') {
             const body = req.body;
             const updateDoc = {};
-            if (body.date)
+            if (body.date) {
+                // preserva o valor original e cria dateFormatted/dateISO
+                const dateInfo = (0, dateHelpers_1.normalizeDateToServer)(body.date);
+                if (!dateInfo)
+                    return res.status(400).json({ error: 'Formato de data inválido' });
                 updateDoc.date = body.date;
+                updateDoc.dateFormatted = dateInfo.dateFormatted;
+                updateDoc.dateISO = dateInfo.dateISO;
+            }
             if (body.nivelManha !== undefined)
                 updateDoc.nivelManha = Number(body.nivelManha);
             if (body.nivelTarde !== undefined)
                 updateDoc.nivelTarde = Number(body.nivelTarde);
             if (body.chuvaMM !== undefined)
                 updateDoc.chuvaMM = Number(body.chuvaMM);
-            if (body.tipoChuva !== undefined)
+            if (body.tipoChuva !== undefined) {
+                if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(String(body.tipoChuva))) {
+                    return res.status(400).json({ error: "Tipo de precipitação inválido" });
+                }
                 updateDoc.tipoChuva = String(body.tipoChuva);
+            }
             updateDoc.updatedAt = new Date();
             if (Object.keys(updateDoc).length === 1) { // só updatedAt
                 return res.status(400).json({ error: 'Nenhum campo para atualizar' });

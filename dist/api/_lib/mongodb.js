@@ -10,7 +10,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config(); // Carrega variáveis do .env no ambiente local
 const mongodb_1 = require("mongodb");
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.MONGODB_DB || "daee"; // seu banco
+const DB_NAME = process.env.MONGODB_DB || "pluvio"; // seu banco
 exports.DEFAULT_COLLECTION = "registros"; // sua collection
 if (!MONGODB_URI) {
     throw new Error("Por favor defina a variável de ambiente MONGODB_URI");
