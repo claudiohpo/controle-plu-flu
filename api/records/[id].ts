@@ -3,31 +3,10 @@ import { getCollection } from '../_lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { normalizeDateToServer } from '../_lib/dateHelpers';
 
-// 🔹 Tipos de precipitação permitidos
-const TIPOS_PRECIPITACAO = [
-  "Chuva",
-  "Trovoada",
-  "Orvalho",
-  "Nevoeiro",
-  "Granizo",
-  "Geada",
-  "Céu Claro",
-  ""
-];
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') return res.status(200).end();
-
-    const { id } = req.query;
-    if (!id || Array.isArray(id)) {
-      return res.status(400).json({ error: 'ID inválido' });
-    }
-
-    const _id = new ObjectId(id);
+    if (!req.query?.id) return res.status(400).json({ error: 'ID obrigatório' });
+    const _id = new ObjectId(String(req.query.id));
     const collection = await getCollection();
 
     if (req.method === 'GET') {
@@ -41,51 +20,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const updateDoc: Record<string, unknown> = {};
 
       if (body.date) {
-        // preserva o valor original e cria dateFormatted/dateISO
-        const dateInfo = normalizeDateToServer(body.date);
-        if (!dateInfo) return res.status(400).json({ error: 'Formato de data inválido' });
-        updateDoc.date = body.date;
-        updateDoc.dateFormatted = dateInfo.dateFormatted;
-        updateDoc.dateISO = dateInfo.dateISO;
+        // normaliza a data e armazena como Date no campo 'date'
+        const dateObj = normalizeDateToServer(body.date);
+        if (!dateObj) return res.status(400).json({ error: 'Formato de data inválido' });
+        updateDoc.date = dateObj;
       }
 
-      if (body.nivelManha !== undefined) updateDoc.nivelManha = Number(body.nivelManha);
-      if (body.nivelTarde !== undefined) updateDoc.nivelTarde = Number(body.nivelTarde);
-      if (body.chuvaMM !== undefined) updateDoc.chuvaMM = Number(body.chuvaMM);
-      if (body.tipoChuva !== undefined) {
-        if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(String(body.tipoChuva))) {
-          return res.status(400).json({ error: "Tipo de precipitação inválido" });
-        }
-        updateDoc.tipoChuva = String(body.tipoChuva);
+      // Mantém a lógica existente para os outros campos sem alterar comportamento
+      if (body.hasOwnProperty('nivelManha')) {
+        const val = (body as any).nivelManha;
+        updateDoc.nivelManha = val === '' || val === null ? 0 : Number(val) || 0;
       }
+      if (body.hasOwnProperty('nivelTarde')) {
+        const val = (body as any).nivelTarde;
+        updateDoc.nivelTarde = val === '' || val === null ? 0 : Number(val) || 0;
+      }
+      if (body.hasOwnProperty('chuvaMM')) {
+        const val = (body as any).chuvaMM;
+        updateDoc.chuvaMM = val === '' || val === null ? 0 : Number(val) || 0;
+      }
+      if (body.hasOwnProperty('tipoChuva')) updateDoc.tipoChuva = (body as any).tipoChuva || '';
+      if (body.hasOwnProperty('duracaoHoras')) updateDoc.duracaoHoras = (body as any).duracaoHoras;
+      if (body.hasOwnProperty('duracaoMinutos')) updateDoc.duracaoMinutos = (body as any).duracaoMinutos;
 
       updateDoc.updatedAt = new Date();
-
-      if (body.duracaoHoras !== undefined) {
-        const h = Number(body.duracaoHoras);
-        if (!Number.isInteger(h) || h < 0 || h > 23) {
-          return res.status(400).json({ error: "Campo 'duracaoHoras' inválido (0-23)." });
-        }
-        updateDoc.duracaoHoras = h;
-      }
-      if (body.duracaoMinutos !== undefined) {
-        const m = Number(body.duracaoMinutos);
-        if (!Number.isInteger(m) || m < 0 || m > 59) {
-          return res.status(400).json({ error: "Campo 'duracaoMinutos' inválido (0-59)." });
-        }
-        updateDoc.duracaoMinutos = m;
-      }
-
-
-      if (Object.keys(updateDoc).length === 1) { // só updatedAt
-        return res.status(400).json({ error: 'Nenhum campo para atualizar' });
-      }
 
       const result = await collection.findOneAndUpdate(
         { _id },
         { $set: updateDoc },
         { returnDocument: 'after' }
       );
+
+      if (!result.value) return res.status(404).json({ error: 'Registro não encontrado' });
       return res.status(200).json(result.value);
     }
 

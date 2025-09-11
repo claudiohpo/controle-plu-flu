@@ -140,6 +140,7 @@ async function loadRecords() {
       const dateTd = document.createElement("td");
       dateTd.className = "col-date";
       const rawDate =
+        item.dateFormatted ??
         item.date ??
         item.data ??
         item.createdAt ??
@@ -246,7 +247,8 @@ function openEditModal(item) {
   const editDateEl = document.getElementById("edit-date");
   if (editDateEl)
     editDateEl.value = toInputDate(
-      item.date ??
+      item.dateFormatted ??
+        item.date ??
         item.data ??
         item.createdAt ??
         item.horario ??
@@ -475,7 +477,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-
 // ---------- Gerar PDF (modal + lógica) ----------
 document.addEventListener("DOMContentLoaded", () => {
   // elementos do modal
@@ -539,41 +540,36 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Helper: formata duração hh:mm
-  // Retorna "" quando ambos hora e minuto estiverem ausentes ou ambos zero.
   function formatDuration(item) {
-    const hasHours = item && item.duracaoHoras != null;
-    const hasMinutes = item && item.duracaoMinutos != null;
-
-    const h = hasHours ? Number(item.duracaoHoras) : null;
-    const m = hasMinutes ? Number(item.duracaoMinutos) : null;
-
-    const hIsValid = h !== null && !Number.isNaN(h);
-    const mIsValid = m !== null && !Number.isNaN(m);
-
-    // Se nenhum valor válido -> vazio
-    if (!hIsValid && !mIsValid) return "";
-
-    // Se ambos válidos e ambos iguais a zero -> vazio
-    const bothZero = (hIsValid ? h === 0 : true) && (mIsValid ? m === 0 : true);
-    if (bothZero) return "";
-
-    const hh = hIsValid ? String(h).padStart(2, "0") : "00";
-    const mm = mIsValid ? String(m).padStart(2, "0") : "00";
+    const h =
+      item.duracaoHoras || item.duracaoHoras === 0
+        ? Number(item.duracaoHoras)
+        : null;
+    const m =
+      item.duracaoMinutos || item.duracaoMinutos === 0
+        ? Number(item.duracaoMinutos)
+        : null;
+    const hh =
+      h !== null && !Number.isNaN(h) ? String(h).padStart(2, "0") : "00";
+    const mm =
+      m !== null && !Number.isNaN(m) ? String(m).padStart(2, "0") : "00";
     return `${hh}:${mm}`;
   }
 
-  // Helper: tenta pegar a data do campo correto.
-  // Prioridade: item.date -> item.data -> item.createdAt -> item.horario
-  // Usa a função formatDate (DD-MM-YYYY) já existente no arquivo.
+  // Helper: tenta pegar dateFormatted ou formatar ISO curto (mantive '-' aqui)
   function getDateForRow(item) {
-    if (!item) return "";
-    const candidate =
-      (item.date !== undefined && item.date !== null ? item.date : null) ||
-      (item.data !== undefined && item.data !== null ? item.data : null) ||
-      (item.createdAt !== undefined && item.createdAt !== null ? item.createdAt : null) ||
-      (item.horario !== undefined && item.horario !== null ? item.horario : null) ||
-      "";
-    return formatDate(candidate);
+    if (item.dateFormatted) return item.dateFormatted;
+    if (item.dateISO) {
+      const d = new Date(item.dateISO);
+      return (
+        String(d.getDate()).padStart(2, "0") +
+        "-" +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        d.getFullYear()
+      );
+    }
+    return "";
   }
 
   // helper: formata YYYY-MM-DD -> DD/MM/YYYY (para título)
@@ -665,7 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
       thead.innerHTML = `
         <tr>
           <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Data</th>
-          <th colspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Nível do Rio <span class="unidade">(metros)</span></th>
+          <th colspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Nível do Rio <span class="unidade">(mt)</span></th>
           <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Chuva<br><span class="unidade">(mm)</span></th>
           <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Duração<br><span class="unidade">(hh:mm)</span></th>
           <th rowspan="2" style="border:1px solid #ccc;padding:6px;text-align:center;">Fenômenos</th>
@@ -679,10 +675,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const tbody = document.createElement("tbody");
 
-      // ordena asc por date para leitura natural
+      // ordena asc por dateISO para leitura natural (opcional)
       data.sort((a, b) => {
-        const da = a.date ? new Date(a.date).getTime() : 0;
-        const db = b.date ? new Date(b.date).getTime() : 0;
+        const da = a.dateISO ? new Date(a.dateISO).getTime() : 0;
+        const db = b.dateISO ? new Date(b.dateISO).getTime() : 0;
         return da - db;
       });
 
@@ -785,4 +781,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 // ---------- fim Gerar PDF ----------
-

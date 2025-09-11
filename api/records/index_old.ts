@@ -16,7 +16,9 @@ const TIPOS_PRECIPITACAO = [
 ];
 
 interface Registro extends Document {
-  date?: Date | string; // agora aceita Date (gravado no Mongo) ou string (entrada)
+  date?: string;         // original recebida (YYYY-MM-DD ou ISO)
+  dateFormatted?: string; // DD-MM-YYYY (para exibir)
+  dateISO?: string;       // ISO (para consultas/ordenacao)
   nivelManha: number;
   nivelTarde: number;
   chuvaMM: number;
@@ -35,11 +37,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const collection = await getCollection<Registro>();
 
-    // if (req.method === 'GET') {
-    //   // ordena por dateISO (se existir) para garantir ordenacao temporal correta
-    //   const docs = await collection.find().sort({ date: -1, createdAt: -1 }).toArray();
-    //   return res.status(200).json(docs);
-    // }
+
+
 
     if (req.method === 'GET') {
       // aceita query params start e end no formato "YYYY-MM-DD" ou ISO
@@ -50,35 +49,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const filter: any = {};
 
       if (startRaw) {
-        const startDate = normalizeDateToServer(startRaw);
-        if (!startDate) return res.status(400).json({ error: "Formato de data 'start' inválido" });
-        // >= início do dia (normalizeDateToServer já gera um Date válido)
-        startDate.setHours(0,0,0,0);
-        filter.date = { ...(filter.date || {}), $gte: startDate };
+        const startInfo = normalizeDateToServer(startRaw);
+        if (!startInfo) return res.status(400).json({ error: "Formato de data 'start' inválido" });
+        // >= início do dia (normalizeDateToServer já gera um ISO válido)
+        filter.dateISO = { ...(filter.dateISO || {}), $gte: startInfo.dateISO };
       }
 
       if (endRaw) {
-        const endDateRaw = normalizeDateToServer(endRaw);
-        if (!endDateRaw) return res.status(400).json({ error: "Formato de data 'end' inválido" });
+        const endInfo = normalizeDateToServer(endRaw);
+        if (!endInfo) return res.status(400).json({ error: "Formato de data 'end' inválido" });
         // para incluir o dia inteiro, ajustamos para 23:59:59.999 do dia
-        const endDate = new Date(endDateRaw);
+        const endDate = new Date(endInfo.dateISO);
         endDate.setHours(23, 59, 59, 999);
-        filter.date = { ...(filter.date || {}), $lte: endDate };
+        filter.dateISO = { ...(filter.dateISO || {}), $lte: endDate.toISOString() };
       }
 
       // se não vierem start/end, retorna tudo (ordenado)
-      const docs = await collection.find(filter).sort({ date: -1, createdAt: -1 }).toArray();
+      const docs = await collection.find(filter).sort({ dateISO: -1, createdAt: -1 }).toArray();
       return res.status(200).json(docs);
     }
+
 
     if (req.method === 'POST') {
       const body = req.body;
       if (!body?.date)
         return res.status(400).json({ error: "Campo 'date' é obrigatório (YYYY-MM-DD ou ISO)" });
 
-      // normaliza/gera Date para o campo `date`
-      const dateObj = normalizeDateToServer(body.date);
-      if (!dateObj) return res.status(400).json({ error: "Formato de data inválido" });
+      // normaliza/gera dateFormatted e dateISO (você já usa normalizeDateToServer)
+      const dateInfo = normalizeDateToServer(body.date);
+      if (!dateInfo) return res.status(400).json({ error: "Formato de data inválido" });
 
       // validação do tipo de precipitação
       if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(body.tipoChuva)) {
@@ -107,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Monta objeto $set apenas com campos realmente enviados (evita sobrescrever com vazios)
-      const setObj: { [key: string]: any } = {};
+      const setObj: Record<string, any> = {};
       // Números: aceitar 0, portanto verificar .hasOwnProperty e != ''
       if (body.hasOwnProperty("nivelManha") && body.nivelManha !== "" && body.nivelManha !== null)
         setObj.nivelManha = Number(body.nivelManha);
@@ -132,22 +131,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       setObj.updatedAt = new Date();
 
       // Campos que só devem ser definidos na criação (setOnInsert)
-      const setOnInsert: Partial<Registro> = {
-        date: dateObj,
+      const setOnInsert = {
+        date: body.date,
+        dateFormatted: dateInfo.dateFormatted,
+        dateISO: dateInfo.dateISO,
         createdAt: new Date(),
       };
 
-      // Atômico: findOneAndUpdate com upsert para garantir 1 doc por date (melhor junto de índice único)
-      const filter = { date: dateObj };
+      // Atômico: findOneAndUpdate com upsert para garantir 1 doc por dateISO (melhor junto de índice único)
+      const filter = { dateISO: dateInfo.dateISO };
       const result = await collection.findOneAndUpdate(
         filter,
         { $set: setObj, $setOnInsert: setOnInsert },
         { upsert: true, returnDocument: "after" } // returnDocument:'after' traz doc após atualização/insert
       );
 
-      // result.value contém o documento atualizado/criado
+      // result.value contém o documento atualizado/creado
       return res.status(result.lastErrorObject && result.lastErrorObject.upserted ? 201 : 200).json(result.value);
     }
+
 
     return res.status(405).json({ error: 'Método não permitido' });
   } catch (error) {
