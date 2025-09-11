@@ -63,7 +63,7 @@ npm install
 npm run build
 
 # rodar server (se estiver usando o dist build)
-npm start
+npx vercel dev
 ```
 
 > Alternativa (Vercel): basta conectar o repositório ao Vercel — as rotas em `api/` são compatíveis com funções serverless.
