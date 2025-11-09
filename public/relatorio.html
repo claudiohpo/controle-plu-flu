@@ -23,6 +23,14 @@
     <!-- bloco com estilo similar ao form do index, mas maior para tabela -->
     <div class="report-card">
       <div class="table-responsive">
+        <!-- CONTROLES DE MÊS -->
+        <div class="month-controls" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <button id="prev-month" type="button" title="Mês anterior">◀</button>
+          <div id="current-month-display" aria-live="polite" style="min-width:160px;text-align:center;font-weight:600;">
+          </div>
+          <button id="next-month" type="button" title="Próximo mês">▶</button>
+          <button id="today-month" type="button" title="Ir para mês atual" style="margin-left:8px;">Hoje</button>
+        </div>
         <div class="table-wrapper">
           <table id="table-register">
             <thead>
@@ -44,6 +52,7 @@
             </tbody>
           </table>
         </div>
+        <div id="monthly-summary" class="monthly-summary" aria-live="polite"></div>
       </div>
 
       <!-- Botões dentro do mesmo bloco (mantém alinhamento e responsividade como no index) -->

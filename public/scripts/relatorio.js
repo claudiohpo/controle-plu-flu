@@ -74,7 +74,7 @@ function extractId(item) {
 }
 
 function showEmpty(tbody, colCount = 7) {
-  // ajustado para 8 colunas
+  // ajustado para 7 colunas (conforme tabela)
   tbody.innerHTML = "";
   const tr = document.createElement("tr");
   const td = document.createElement("td");
@@ -85,8 +85,305 @@ function showEmpty(tbody, colCount = 7) {
   tbody.appendChild(tr);
 }
 
-let recordsData = [];
+let recordsData = []; // armazena todos os registros recebidos do backend
 
+/* ------------------ Controles de mês (estado + helpers) ------------------ */
+
+// estado do mês atualmente exibido (iniciado no mês atual, dia 1)
+let currentMonthDate = new Date();
+currentMonthDate.setDate(1);
+
+// parse robusto de várias formas de data que seu backend pode trazer
+function parseToDate(raw) {
+  if (raw === undefined || raw === null || raw === "") return null;
+  // se já é Date
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+  // se número (timestamp)
+  if (typeof raw === "number") {
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // string: YYYY-MM-DD
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [yyyy, mm, dd] = s.split("-");
+      return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    }
+    // DD-MM-YYYY
+    if (/^\d{2}-\d{2}-\d{4}$/.test(s)) {
+      const [dd, mm, yyyy] = s.split("-");
+      return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    }
+    // fallback: tenta Date constructor (pode aceitar ISO com hora)
+    const d2 = new Date(s);
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+  return null;
+}
+
+function formatMonthDisplay(d) {
+  const months = [
+    "janeiro","fevereiro","março","abril","maio","junho",
+    "julho","agosto","setembro","outubro","novembro","dezembro"
+  ];
+  if (!d || !(d instanceof Date)) return "";
+  const m = d.getMonth();
+  const y = d.getFullYear();
+  return months[m].charAt(0).toUpperCase() + months[m].slice(1) + " " + y;
+}
+
+/* ----- renderização da tabela a partir de um array (reaproveita sua lógica) ----- */
+function renderRowsFromArray(dataArray) {
+  const tbody = document.querySelector("#table-register tbody");
+  if (!tbody) {
+    console.error('Elemento "#table-register tbody" não encontrado no DOM.');
+    return;
+  }
+  tbody.innerHTML = "";
+
+  if (!dataArray || dataArray.length === 0) {
+    showEmpty(tbody, 7); // mantém 7 colunas
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  dataArray.forEach((item) => {
+    const tr = document.createElement("tr");
+
+    // radio/select
+    const tdRadio = document.createElement("td");
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "selecionar";
+    radio.value = extractId(item);
+    tdRadio.appendChild(radio);
+    tr.appendChild(tdRadio);
+
+    // Data
+    const dateTd = document.createElement("td");
+    dateTd.className = "col-date";
+    const rawDate =
+      item.date ?? item.data ?? item.createdAt ?? item.horario ?? "";
+    dateTd.textContent = rawDate ? formatDate(rawDate) : "";
+    dateTd.title = dateTd.textContent || "";
+    tr.appendChild(dateTd);
+
+    // Nivel manhã
+    const nivelManhaTd = document.createElement("td");
+    nivelManhaTd.className = "col-num";
+    nivelManhaTd.textContent =
+      typeof item.nivelManha === "number"
+        ? item.nivelManha.toFixed(2)
+        : item.nivelManha ?? "";
+    nivelManhaTd.title = nivelManhaTd.textContent || "";
+    tr.appendChild(nivelManhaTd);
+
+    // Nivel tarde
+    const nivelTardeTd = document.createElement("td");
+    nivelTardeTd.className = "col-num";
+    nivelTardeTd.textContent =
+      typeof item.nivelTarde === "number"
+        ? item.nivelTarde.toFixed(2)
+        : item.nivelTarde ?? "";
+    nivelTardeTd.title = nivelTardeTd.textContent || "";
+    tr.appendChild(nivelTardeTd);
+
+    // Chuva (mm)
+    const chuvaMMTd = document.createElement("td");
+    chuvaMMTd.className = "col-num";
+    chuvaMMTd.textContent =
+      typeof item.chuvaMM === "number"
+        ? item.chuvaMM.toFixed(1)
+        : item.chuvaMM ?? "";
+    chuvaMMTd.title = chuvaMMTd.textContent || "";
+    tr.appendChild(chuvaMMTd);
+
+    // Duração (hh:mm)
+    const duracaoTd = document.createElement("td");
+    duracaoTd.className = "col-dur";
+    if (item.duracaoHoras != null || item.duracaoMinutos != null) {
+      const h =
+        item.duracaoHoras != null
+          ? String(item.duracaoHoras).padStart(2, "0")
+          : "00";
+      const m =
+        item.duracaoMinutos != null
+          ? String(item.duracaoMinutos).padStart(2, "0")
+          : "00";
+      duracaoTd.textContent = `${h}:${m}`;
+    } else {
+      duracaoTd.textContent = "";
+    }
+    duracaoTd.title = duracaoTd.textContent || "";
+    tr.appendChild(duracaoTd);
+
+    // Tipo
+    const tipoChuvaTd = document.createElement("td");
+    tipoChuvaTd.className = "col-tipo";
+    tipoChuvaTd.textContent = item.tipoChuva ?? "";
+    tipoChuvaTd.title = tipoChuvaTd.textContent || "";
+    tr.appendChild(tipoChuvaTd);
+
+    frag.appendChild(tr);
+  });
+
+  tbody.appendChild(frag);
+}
+
+function normalizeToNumber(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "") return null;
+    const normalized = Number(trimmed.replace(",", "."));
+    return Number.isFinite(normalized) ? normalized : null;
+  }
+  return null;
+}
+
+function calculateMonthlyStats(dataArray) {
+  const rainValues = [];
+  const morningValues = [];
+  const afternoonValues = [];
+
+  dataArray.forEach((item) => {
+    const rain = normalizeToNumber(item.chuvaMM);
+    if (rain !== null) rainValues.push(rain);
+
+    const morning = normalizeToNumber(item.nivelManha);
+    if (morning !== null) morningValues.push(morning);
+
+    const afternoon = normalizeToNumber(item.nivelTarde);
+    if (afternoon !== null) afternoonValues.push(afternoon);
+  });
+
+  const totalRain = rainValues.reduce((sum, value) => sum + value, 0);
+  const rainyDays = rainValues.filter((value) => value > 1).length;
+  const rainMax = rainValues.length ? Math.max(...rainValues) : null;
+
+  const morningMin = morningValues.length ? Math.min(...morningValues) : null;
+  const morningMax = morningValues.length ? Math.max(...morningValues) : null;
+  const afternoonMin = afternoonValues.length
+    ? Math.min(...afternoonValues)
+    : null;
+  const afternoonMax = afternoonValues.length
+    ? Math.max(...afternoonValues)
+    : null;
+
+  return {
+    totalRain,
+    rainyDays,
+    rainMax,
+    morningMin,
+    morningMax,
+    afternoonMin,
+    afternoonMax,
+  };
+}
+
+function formatNumeric(value, decimals, suffix = "") {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return `${value.toFixed(decimals)}${suffix}`;
+}
+
+function updateMonthlySummary(dataArray) {
+  const summaryEl = document.getElementById("monthly-summary");
+  if (!summaryEl) return;
+
+  if (!Array.isArray(dataArray) || dataArray.length === 0) {
+    summaryEl.innerHTML =
+      '<p class="summary-empty">Sem registros para este mês.</p>';
+    return;
+  }
+
+  const stats = calculateMonthlyStats(dataArray);
+
+  const rainTotalText = formatNumeric(stats.totalRain, 1, " mm");
+  const rainMaxText = formatNumeric(stats.rainMax, 1, " mm");
+  const morningRange = `mín ${formatNumeric(stats.morningMin, 2, " m")} / máx ${formatNumeric(stats.morningMax, 2, " m")}`;
+  const afternoonRange = `mín ${formatNumeric(stats.afternoonMin, 2, " m")} / máx ${formatNumeric(stats.afternoonMax, 2, " m")}`;
+
+  summaryEl.innerHTML = `
+    <h3>Resumo do mês</h3>
+    <ul>
+      <li><span>Total de chuva:</span> <strong>${rainTotalText}</strong></li>
+      <li><span>Dias com chuva &gt; 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
+      <li><span>Chuva máxima:</span> <strong>${rainMaxText}</strong></li>
+      <li><span>Nível do rio (Manhã):</span> <strong>${morningRange}</strong></li>
+      <li><span>Nível do rio (Tarde):</span> <strong>${afternoonRange}</strong></li>
+    </ul>
+  `;
+}
+
+/* ----- render da tabela filtrada pelo mês atual (preserva ordem original de recordsData) ----- */
+function renderTableForMonth(monthDate) {
+  if (!Array.isArray(recordsData)) {
+    renderRowsFromArray([]);
+    updateMonthlySummary([]);
+    return;
+  }
+  const targetYear = monthDate.getFullYear();
+  const targetMonth = monthDate.getMonth();
+
+  // filtro que preserva ordem do array original
+  const filtered = recordsData.filter((item) => {
+    const raw =
+      item.date ?? item.data ?? item.createdAt ?? item.horario ?? null;
+    const d = parseToDate(raw);
+    if (!d) return false;
+    return d.getFullYear() === targetYear && d.getMonth() === targetMonth;
+  });
+
+  renderRowsFromArray(filtered);
+  updateMonthlySummary(filtered);
+}
+
+/* ----- inicializa controles do mês (botões) ----- */
+function initMonthControls() {
+  const prevBtn = document.getElementById("prev-month");
+  const nextBtn = document.getElementById("next-month");
+  const todayBtn = document.getElementById("today-month");
+  const display = document.getElementById("current-month-display");
+
+  function updateDisplay() {
+    if (display) display.textContent = formatMonthDisplay(currentMonthDate);
+  }
+
+  // ações dos botões
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+      updateDisplay();
+      renderTableForMonth(currentMonthDate);
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+      updateDisplay();
+      renderTableForMonth(currentMonthDate);
+    });
+  }
+
+  if (todayBtn) {
+    todayBtn.addEventListener("click", () => {
+      currentMonthDate = new Date();
+      currentMonthDate.setDate(1);
+      updateDisplay();
+      renderTableForMonth(currentMonthDate);
+    });
+  }
+
+  // inicializa texto e render (se já houver recordsData será filtrado; se não, loadRecords fará a primeira render)
+  updateDisplay();
+  renderTableForMonth(currentMonthDate);
+}
+
+/* ----- nova versão de loadRecords: só busca e guarda, e delega render a renderTableForMonth ----- */
 async function loadRecords() {
   try {
     const res = await doFetch("/api/records");
@@ -108,129 +405,17 @@ async function loadRecords() {
       ? raw.records
       : [];
 
-    recordsData = data;
+    recordsData = data; // mantém array para edição/exclusão/etc.
 
-    const tbody = document.querySelector("#table-register tbody");
-    if (!tbody) {
-      console.error('Elemento "#table-register tbody" não encontrado no DOM.');
-      return;
-    }
-    tbody.innerHTML = "";
-
-    if (!data || data.length === 0) {
-      showEmpty(tbody);
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-
-    data.forEach((item) => {
-      const tr = document.createElement("tr");
-
-      // radio/select
-      const tdRadio = document.createElement("td");
-      const radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "selecionar";
-      radio.value = extractId(item);
-      tdRadio.appendChild(radio);
-      tr.appendChild(tdRadio);
-
-      // Data
-      const dateTd = document.createElement("td");
-      dateTd.className = "col-date";
-      const rawDate =
-        item.date ??
-        item.data ??
-        item.createdAt ??
-        item.horario ??
-        "";
-      dateTd.textContent = rawDate ? formatDate(rawDate) : "";
-      dateTd.title = dateTd.textContent || "";
-      tr.appendChild(dateTd);
-
-      // Nivel manhã
-      const nivelManhaTd = document.createElement("td");
-      nivelManhaTd.className = "col-num";
-      nivelManhaTd.textContent =
-        typeof item.nivelManha === "number"
-          ? item.nivelManha.toFixed(2)
-          : item.nivelManha ?? "";
-      nivelManhaTd.title = nivelManhaTd.textContent || "";
-      tr.appendChild(nivelManhaTd);
-
-      // Nivel tarde
-      const nivelTardeTd = document.createElement("td");
-      nivelTardeTd.className = "col-num";
-      nivelTardeTd.textContent =
-        typeof item.nivelTarde === "number"
-          ? item.nivelTarde.toFixed(2)
-          : item.nivelTarde ?? "";
-      nivelTardeTd.title = nivelTardeTd.textContent || "";
-      tr.appendChild(nivelTardeTd);
-
-      // Chuva (mm)
-      const chuvaMMTd = document.createElement("td");
-      chuvaMMTd.className = "col-num";
-      chuvaMMTd.textContent =
-        typeof item.chuvaMM === "number"
-          ? item.chuvaMM.toFixed(1)
-          : item.chuvaMM ?? "";
-      chuvaMMTd.title = chuvaMMTd.textContent || "";
-      tr.appendChild(chuvaMMTd);
-
-      // Duração (hh:mm)
-      const duracaoTd = document.createElement("td");
-      duracaoTd.className = "col-dur";
-      if (item.duracaoHoras != null || item.duracaoMinutos != null) {
-        const h =
-          item.duracaoHoras != null
-            ? String(item.duracaoHoras).padStart(2, "0")
-            : "00";
-        const m =
-          item.duracaoMinutos != null
-            ? String(item.duracaoMinutos).padStart(2, "0")
-            : "00";
-        duracaoTd.textContent = `${h}:${m}`;
-      } else {
-        duracaoTd.textContent = "";
-      }
-      duracaoTd.title = duracaoTd.textContent || "";
-      tr.appendChild(duracaoTd);
-
-      // Tipo
-      const tipoChuvaTd = document.createElement("td");
-      tipoChuvaTd.className = "col-tipo";
-      tipoChuvaTd.textContent = item.tipoChuva ?? "";
-      tipoChuvaTd.title = tipoChuvaTd.textContent || "";
-      tr.appendChild(tipoChuvaTd);
-
-      // // Observações (opcional, pode ser observacoes ou observations)
-      // const obsText = item.observacoes ?? item.observations ?? "";
-      // const obsTd = document.createElement("td");
-      // obsTd.className = "col-obs";
-      // obsTd.textContent = obsText;
-      // obsTd.title = obsText || "";
-
-      // Torna clicável no mobile/pequenas telas se o texto for longo
-      // if (obsText && obsText.length > 40) {
-      //   obsTd.setAttribute("role", "clickable");
-      //   obsTd.style.cursor = "pointer";
-      //   obsTd.addEventListener("click", () => showFullText(obsText));
-      // }
-      // tr.appendChild(obsTd);
-
-      frag.appendChild(tr);
-    });
-
-    tbody.appendChild(frag);
+    // renderiza o mês atual (manterá a ordenação original do array retornado)
+    renderTableForMonth(currentMonthDate);
   } catch (err) {
     console.error("Erro carregando registros:", err);
     alert("Erro ao carregar registros: " + (err.message || err));
   }
 }
 
-/* ===== Modal: abrir / preencher / salvar ===== */
+/* ------------------ Modal de edição: abrir / preencher / salvar ------------------ */
 
 function openEditModal(item) {
   if (!item) return;
@@ -246,11 +431,7 @@ function openEditModal(item) {
   const editDateEl = document.getElementById("edit-date");
   if (editDateEl)
     editDateEl.value = toInputDate(
-      item.date ??
-        item.data ??
-        item.createdAt ??
-        item.horario ??
-        ""
+      item.date ?? item.data ?? item.createdAt ?? item.horario ?? ""
     );
 
   const el = (id) => document.getElementById(id);
@@ -308,9 +489,14 @@ function closeEditModal() {
   if (frm) frm.reset();
 }
 
+/* ------------------ DOM ready: inicializações (load, botões, modais) ------------------ */
+
 document.addEventListener("DOMContentLoaded", () => {
+  // inicializa controles do mês e carrega registros
+  initMonthControls();
   loadRecords();
 
+  // editar / excluir - seleciona radio e usa recordsData para abrir modal
   const btnEditar = document.querySelector(".btn.editar");
   const btnExcluir = document.querySelector(".btn.excluir");
 
@@ -366,7 +552,8 @@ document.addEventListener("DOMContentLoaded", () => {
           throw new Error(errText);
         }
         alert("Registro excluído!");
-        loadRecords();
+        // recarrega todos os registros e re-renderiza mês atual
+        await loadRecords();
       } catch (err) {
         console.error("Erro ao excluir:", err);
         alert("Erro ao excluir: " + (err.message || err));
@@ -374,6 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // modal editar: botões e submit
   const editForm = document.getElementById("edit-form");
   const cancelBtn = document.getElementById("cancel-edit");
   const editModal = document.getElementById("edit-modal");
@@ -458,7 +646,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         alert("Registro atualizado!");
         closeEditModal();
-        loadRecords();
+        // recarrega os registros para manter consistência e re-renderiza mês atual
+        await loadRecords();
       } catch (err) {
         console.error("Erro ao enviar edição:", err);
         alert("Erro ao editar: " + (err.message || err));
@@ -475,8 +664,78 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+/* ------------------ Gerar PDF (modal + lógica) ------------------ */
 
-// ---------- Gerar PDF (modal + lógica) ----------
+// Helpers para PDF (reaproveitar lógica já existente)
+function formatDuration(item) {
+  const hasHours = item && item.duracaoHoras != null;
+  const hasMinutes = item && item.duracaoMinutos != null;
+
+  const h = hasHours ? Number(item.duracaoHoras) : null;
+  const m = hasMinutes ? Number(item.duracaoMinutos) : null;
+
+  const hIsValid = h !== null && !Number.isNaN(h);
+  const mIsValid = m !== null && !Number.isNaN(m);
+
+  if (!hIsValid && !mIsValid) return "";
+
+  const bothZero = (hIsValid ? h === 0 : true) && (mIsValid ? m === 0 : true);
+  if (bothZero) return "";
+
+  const hh = hIsValid ? String(h).padStart(2, "0") : "00";
+  const mm = mIsValid ? String(m).padStart(2, "0") : "00";
+  return `${hh}:${mm}`;
+}
+
+function getDateForRow(item) {
+  if (!item) return "";
+  const candidate =
+    (item.date !== undefined && item.date !== null ? item.date : null) ||
+    (item.data !== undefined && item.data !== null ? item.data : null) ||
+    (item.createdAt !== undefined && item.createdAt !== null ? item.createdAt : null) ||
+    (item.horario !== undefined && item.horario !== null ? item.horario : null) ||
+    "";
+  return formatDate(candidate);
+}
+
+function toDisplayDateSlash(input) {
+  if (!input) return "";
+  if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [yyyy, mm, dd] = input.split("-");
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  if (typeof input === "string" && /^\d{2}-\d{2}-\d{4}$/.test(input)) {
+    return input.replace(/-/g, "/");
+  }
+  const d = new Date(input);
+  if (!Number.isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return String(input);
+}
+
+function toFileDateHyphen(input) {
+  if (!input) return "";
+  if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [yyyy, mm, dd] = input.split("-");
+    return `${dd}-${mm}-${yyyy}`;
+  }
+  if (typeof input === "string" && /^\d{2}-\d{2}-\d{4}$/.test(input)) {
+    return input;
+  }
+  const d = new Date(input);
+  if (!Number.isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  }
+  return String(input).replace(/\//g, "-");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // elementos do modal
   const pdfModal = document.getElementById("pdf-modal");
@@ -492,12 +751,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("[PDF] pdfModal não encontrado no DOM.");
       return;
     }
-    // exibe como flex para respeitar o CSS (.modal[aria-hidden="false"] usa flex)
     pdfModal.setAttribute("aria-hidden", "false");
     pdfModal.style.display = "flex";
-    // garante centralização: o conteúdo interno usa .modal-content
     if (inputStart) inputStart.focus();
-    console.log("[PDF] modal aberto");
   }
 
   function closePdfModal() {
@@ -505,7 +761,6 @@ document.addEventListener("DOMContentLoaded", () => {
     pdfModal.setAttribute("aria-hidden", "true");
     pdfModal.style.display = "none";
     if (pdfForm) pdfForm.reset();
-    console.log("[PDF] modal fechado");
   }
 
   if (btnPdfOpen) {
@@ -521,7 +776,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // clicar fora fecha (mesma lógica do modal de edição)
   if (pdfModal) {
     pdfModal.addEventListener("click", (e) => {
       if (e.target === pdfModal) {
@@ -530,91 +784,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ESC fecha
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (pdfModal && pdfModal.getAttribute("aria-hidden") === "false")
         closePdfModal();
     }
   });
-
-  // Helper: formata duração hh:mm
-  // Retorna "" quando ambos hora e minuto estiverem ausentes ou ambos zero.
-  function formatDuration(item) {
-    const hasHours = item && item.duracaoHoras != null;
-    const hasMinutes = item && item.duracaoMinutos != null;
-
-    const h = hasHours ? Number(item.duracaoHoras) : null;
-    const m = hasMinutes ? Number(item.duracaoMinutos) : null;
-
-    const hIsValid = h !== null && !Number.isNaN(h);
-    const mIsValid = m !== null && !Number.isNaN(m);
-
-    // Se nenhum valor válido -> vazio
-    if (!hIsValid && !mIsValid) return "";
-
-    // Se ambos válidos e ambos iguais a zero -> vazio
-    const bothZero = (hIsValid ? h === 0 : true) && (mIsValid ? m === 0 : true);
-    if (bothZero) return "";
-
-    const hh = hIsValid ? String(h).padStart(2, "0") : "00";
-    const mm = mIsValid ? String(m).padStart(2, "0") : "00";
-    return `${hh}:${mm}`;
-  }
-
-  // Helper: tenta pegar a data do campo correto.
-  // Prioridade: item.date -> item.data -> item.createdAt -> item.horario
-  // Usa a função formatDate (DD-MM-YYYY) já existente no arquivo.
-  function getDateForRow(item) {
-    if (!item) return "";
-    const candidate =
-      (item.date !== undefined && item.date !== null ? item.date : null) ||
-      (item.data !== undefined && item.data !== null ? item.data : null) ||
-      (item.createdAt !== undefined && item.createdAt !== null ? item.createdAt : null) ||
-      (item.horario !== undefined && item.horario !== null ? item.horario : null) ||
-      "";
-    return formatDate(candidate);
-  }
-
-  // helper: formata YYYY-MM-DD -> DD/MM/YYYY (para título)
-  function toDisplayDateSlash(input) {
-    if (!input) return "";
-    if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
-      const [yyyy, mm, dd] = input.split("-");
-      return `${dd}/${mm}/${yyyy}`;
-    }
-    if (typeof input === "string" && /^\d{2}-\d{2}-\d{4}$/.test(input)) {
-      return input.replace(/-/g, "/");
-    }
-    const d = new Date(input);
-    if (!Number.isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      return `${dd}/${mm}/${yyyy}`;
-    }
-    return String(input);
-  }
-
-  // helper: formata YYYY-MM-DD -> DD-MM-YYYY (para nome do arquivo)
-  function toFileDateHyphen(input) {
-    if (!input) return "";
-    if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
-      const [yyyy, mm, dd] = input.split("-");
-      return `${dd}-${mm}-${yyyy}`;
-    }
-    if (typeof input === "string" && /^\d{2}-\d{2}-\d{4}$/.test(input)) {
-      return input;
-    }
-    const d = new Date(input);
-    if (!Number.isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      return `${dd}-${mm}-${yyyy}`;
-    }
-    return String(input).replace(/\//g, "-");
-  }
 
   async function generatePdfHandler() {
     if (!inputStart || !inputEnd)
@@ -639,13 +814,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // monta tabela (idêntica à vista no HTML — cabeçalhos em duas linhas)
       const container = document.createElement("div");
-      container.style.padding = "12px"; // margem interna para o PDF
+      container.style.padding = "12px";
 
       const title = document.createElement("h3");
       title.textContent = `Marcações de: ${toDisplayDateSlash(
         start
       )} a ${toDisplayDateSlash(end)}`;
-      // estilos solicitados
       title.style.textAlign = "center";
       title.style.marginBottom = "16px";
       title.style.fontWeight = "bold";
@@ -658,7 +832,6 @@ document.addEventListener("DOMContentLoaded", () => {
       table.style.width = "100%";
       table.style.borderCollapse = "collapse";
       table.style.fontSize = "12px";
-      // centraliza por padrão as células (redundante com td.style, mas seguro)
       table.style.textAlign = "center";
 
       const thead = document.createElement("thead");
@@ -685,6 +858,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const db = b.date ? new Date(b.date).getTime() : 0;
         return da - db;
       });
+
+      const stats = calculateMonthlyStats(data);
 
       data.forEach((item) => {
         const tr = document.createElement("tr");
@@ -758,6 +933,33 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       // gera e salva
+
+            const summary = document.createElement("div");
+            summary.className = "monthly-summary pdf-summary";
+
+            const rainTotalText = formatNumeric(stats.totalRain, 1, " mm");
+            const rainMaxText = formatNumeric(stats.rainMax, 1, " mm");
+            const morningRange = `mín ${formatNumeric(stats.morningMin, 2, " m")} / máx ${
+              formatNumeric(stats.morningMax, 2, " m")
+            }`;
+            const afternoonRange = `mín ${formatNumeric(
+              stats.afternoonMin,
+              2,
+              " m"
+            )} / máx ${formatNumeric(stats.afternoonMax, 2, " m")}`;
+
+            summary.innerHTML = `
+              <h3>Resumo do período</h3>
+              <ul>
+                <li><span>Total de chuva:</span> <strong>${rainTotalText}</strong></li>
+                <li><span>Dias com chuva &gt; 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
+                <li><span>Chuva máxima:</span> <strong>${rainMaxText}</strong></li>
+                <li><span>Nível do rio (Manhã):</span> <strong>${morningRange}</strong></li>
+                <li><span>Nível do rio (Tarde):</span> <strong>${afternoonRange}</strong></li>
+              </ul>
+            `;
+
+            container.appendChild(summary);
       await html2pdf().set(opt).from(container).save();
 
       // limpa
@@ -775,14 +977,4 @@ document.addEventListener("DOMContentLoaded", () => {
       generatePdfHandler();
     });
   }
-
-  // permite ESC para fechar o modal PDF (redundante mas seguro)
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (pdfModal && pdfModal.getAttribute("aria-hidden") === "false")
-        closePdfModal();
-    }
-  });
 });
-// ---------- fim Gerar PDF ----------
-

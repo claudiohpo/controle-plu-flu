@@ -10,6 +10,8 @@
 ## ✨ Destaques
 
 * UI simples e responsiva para inserção diária de medições (nível manhã/tarde, precipitação em mm, duração, tipo de chuva, etc.).
+* Resumo mensal automático com totais de chuva, dias chuvosos e faixas mínima/máxima do nível do rio.
+* Exportação em PDF com tabela detalhada **e** o mesmo resumo mensal pronto para envio oficial.
 * API REST (`/api/records`) pronta para deploy serverless (Vercel) ou execução local.
 * Validações básicas no frontend e no backend (datas, tipos, faixas de horas/minutos).
 * Estrutura pensada para facilitar exportação/relatórios e envio oficial.
@@ -99,7 +101,8 @@ npx vercel dev
 
 ## ♻️ Próximos passos 
 
-* Geração automática de PDF do relatório diário pronto para assinatura e envio.
+* Exportação CSV dos dados filtrados.
+* Autenticação opcional para proteger o painel de edição.
 
 ---
 
