@@ -303,11 +303,10 @@
   color: #0066cc;
 }
 
+/* Mantém 2 colunas em todos os tamanhos de tela */
 @media (max-width: 420px) {
   .checkbox-group {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 8px;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
