@@ -80,9 +80,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const dateObj = normalizeDateToServer(body.date);
       if (!dateObj) return res.status(400).json({ error: "Formato de data inválido" });
 
-      // validação do tipo de precipitação
-      if (body.tipoChuva && !TIPOS_PRECIPITACAO.includes(body.tipoChuva)) {
-        return res.status(400).json({ error: "Tipo de precipitação inválido" });
+      // validação do tipo de precipitação (pode ser string ou array de strings)
+      if (body.tipoChuva) {
+        let tiposToValidate: string[] = [];
+        if (Array.isArray(body.tipoChuva)) {
+          tiposToValidate = body.tipoChuva;
+        } else if (typeof body.tipoChuva === "string") {
+          tiposToValidate = [body.tipoChuva];
+        }
+        
+        for (const tipo of tiposToValidate) {
+          if (!TIPOS_PRECIPITACAO.includes(tipo)) {
+            return res.status(400).json({ error: `Tipo de precipitação inválido: "${tipo}"` });
+          }
+        }
       }
 
       // parse/validação de duracao (se vier)
@@ -116,9 +127,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.hasOwnProperty("chuvaMM") && body.chuvaMM !== "" && body.chuvaMM !== null)
         setObj.chuvaMM = Number(body.chuvaMM);
 
-      // Strings: somente se não-vazias
-      if (body.hasOwnProperty("tipoChuva") && typeof body.tipoChuva === "string" && body.tipoChuva.trim() !== "")
-        setObj.tipoChuva = body.tipoChuva.trim();
+      // Strings: somente se não-vazias (aceita string ou array)
+      if (body.hasOwnProperty("tipoChuva")) {
+        if (Array.isArray(body.tipoChuva) && body.tipoChuva.length > 0) {
+          setObj.tipoChuva = body.tipoChuva;
+        } else if (typeof body.tipoChuva === "string" && body.tipoChuva.trim() !== "") {
+          setObj.tipoChuva = body.tipoChuva.trim();
+        }
+      }
 
       // Duração (já parseado acima)
       if (duracaoHorasNum !== undefined) setObj.duracaoHoras = duracaoHorasNum;

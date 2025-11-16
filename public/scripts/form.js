@@ -30,8 +30,14 @@ if (form) {
     const chuva = document.getElementById('chuvaMM')?.value;
     if (chuva !== undefined && String(chuva).trim() !== '') payload.chuvaMM = Number(chuva);
 
-    const tipo = document.getElementById('tipoChuva')?.value;
-    if (tipo !== undefined) payload.tipoChuva = tipo;
+    // coleta múltiplas seleções de tipo (checkboxes)
+    const tipoContainer = document.getElementById('tipoChuva-container');
+    const tipos = [];
+    if (tipoContainer) {
+      const checkboxes = tipoContainer.querySelectorAll('input[name="tipoChuva"]:checked');
+      checkboxes.forEach(cb => tipos.push(cb.value));
+    }
+    if (tipos.length > 0) payload.tipoChuva = tipos;
 
     // const obs = document.getElementById('observacoes')?.value;
     // if (obs !== undefined) payload.observacoes = obs;

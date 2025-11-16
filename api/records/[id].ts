@@ -39,7 +39,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const val = (body as any).chuvaMM;
         updateDoc.chuvaMM = val === '' || val === null ? 0 : Number(val) || 0;
       }
-      if (body.hasOwnProperty('tipoChuva')) updateDoc.tipoChuva = (body as any).tipoChuva || '';
+      if (body.hasOwnProperty('tipoChuva')) {
+        // Validação: pode ser string ou array
+        let tiposToValidate: string[] = [];
+        const tipoValue = (body as any).tipoChuva;
+        
+        if (Array.isArray(tipoValue)) {
+          tiposToValidate = tipoValue;
+        } else if (typeof tipoValue === "string") {
+          tiposToValidate = [tipoValue];
+        }
+        
+        for (const tipo of tiposToValidate) {
+          const TIPOS_PERMITIDOS = ["Chuva", "Trovoada", "Orvalho", "Nevoeiro", "Granizo", "Geada", "Céu Claro", ""];
+          if (!TIPOS_PERMITIDOS.includes(tipo)) {
+            return res.status(400).json({ error: `Tipo de precipitação inválido: "${tipo}"` });
+          }
+        }
+        
+        updateDoc.tipoChuva = tipoValue || '';
+      }
       if (body.hasOwnProperty('duracaoHoras')) updateDoc.duracaoHoras = (body as any).duracaoHoras;
       if (body.hasOwnProperty('duracaoMinutos')) updateDoc.duracaoMinutos = (body as any).duracaoMinutos;
 

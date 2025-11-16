@@ -219,11 +219,17 @@ function renderRowsFromArray(dataArray) {
     duracaoTd.title = duracaoTd.textContent || "";
     tr.appendChild(duracaoTd);
 
-    // Tipo
+    // Tipo (pode ser string ou array)
     const tipoChuvaTd = document.createElement("td");
     tipoChuvaTd.className = "col-tipo";
-    tipoChuvaTd.textContent = item.tipoChuva ?? "";
-    tipoChuvaTd.title = tipoChuvaTd.textContent || "";
+    let tipoText = "";
+    if (Array.isArray(item.tipoChuva)) {
+      tipoText = item.tipoChuva.join(" | ");
+    } else if (item.tipoChuva) {
+      tipoText = String(item.tipoChuva);
+    }
+    tipoChuvaTd.textContent = tipoText;
+    tipoChuvaTd.title = tipoText || "";
     tr.appendChild(tipoChuvaTd);
 
     frag.appendChild(tr);
@@ -310,7 +316,7 @@ function updateMonthlySummary(dataArray) {
     <h3>Resumo do mês</h3>
     <ul>
       <li><span>Total de chuva:</span> <strong>${rainTotalText}</strong></li>
-      <li><span>Dias com chuva &gt;= 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
+      <li><span>Dias com chuva &ge; 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
       <li><span>Chuva máxima:</span> <strong>${rainMaxText}</strong></li>
       <li><span>Nível do rio (Manhã):</span> <strong>${morningRange}</strong></li>
       <li><span>Nível do rio (Tarde):</span> <strong>${afternoonRange}</strong></li>
@@ -452,23 +458,18 @@ function openEditModal(item) {
     el("edit-duracaoMinutos").value =
       item.duracaoMinutos != null ? item.duracaoMinutos : "";
 
-  const tipoSelect = document.getElementById("edit-tipoChuva");
-  const tipoValRaw = item.tipoChuva ?? "";
-  let matched = false;
-  if (tipoSelect && tipoValRaw !== "") {
-    const tipoVal = String(tipoValRaw).toLowerCase();
-    for (let i = 0; i < tipoSelect.options.length; i++) {
-      const opt = tipoSelect.options[i];
-      const val = (opt.value || "").toLowerCase();
-      const txt = (opt.text || "").toLowerCase();
-      if (val === tipoVal || txt === tipoVal) {
-        tipoSelect.selectedIndex = i;
-        matched = true;
-        break;
-      }
-    }
+  const tipoContainer = document.getElementById("edit-tipoChuva-container");
+  if (tipoContainer) {
+    const checkboxes = tipoContainer.querySelectorAll('input[name="tipoChuva"]');
+    checkboxes.forEach(cb => cb.checked = false); // limpa tudo
+    
+    const tipoValRaw = item.tipoChuva ?? [];
+    const tiposArray = Array.isArray(tipoValRaw) ? tipoValRaw : (tipoValRaw ? [tipoValRaw] : []);
+    
+    checkboxes.forEach(cb => {
+      cb.checked = tiposArray.some(t => String(t).toLowerCase() === cb.value.toLowerCase());
+    });
   }
-  if (tipoSelect && !matched) tipoSelect.value = "";
 
   modal.setAttribute("aria-hidden", "false");
   document.documentElement.style.overflow = "hidden";
@@ -594,12 +595,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const nmEl = document.getElementById("edit-nivelManha");
       const ntEl = document.getElementById("edit-nivelTarde");
       const chuvaEl = document.getElementById("edit-chuvaMM");
-      const tipoEl = document.getElementById("edit-tipoChuva");
+      const tipoContainer = document.getElementById("edit-tipoChuva-container");
 
       const nm = nmEl ? nmEl.value : "";
       const nt = ntEl ? ntEl.value : "";
       const chuva = chuvaEl ? chuvaEl.value : "";
-      const tipo = tipoEl ? tipoEl.value : "";
+      
+      // coleta múltiplas seleções de tipo (checkboxes)
+      let tipo = [];
+      if (tipoContainer) {
+        const checkboxes = tipoContainer.querySelectorAll('input[name="tipoChuva"]:checked');
+        checkboxes.forEach(cb => tipo.push(cb.value));
+      }
 
       const ehEl = document.getElementById("edit-duracaoHoras");
       const emEl = document.getElementById("edit-duracaoMinutos");
@@ -609,7 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (nm !== "") payload.nivelManha = Number(nm);
       if (nt !== "") payload.nivelTarde = Number(nt);
       if (chuva !== "") payload.chuvaMM = Number(chuva);
-      if (tipo !== "") payload.tipoChuva = tipo;
+      if (tipo.length > 0) payload.tipoChuva = tipo;
 
       if (eh !== undefined && String(eh).trim() !== "") {
         const v = Number(eh);
@@ -877,8 +884,8 @@ document.addEventListener("DOMContentLoaded", () => {
         tdManha.style.border = "1px solid #ccc";
         tdManha.style.padding = "6px";
         tdManha.style.textAlign = "center";
-        tdManha.textContent =
-          item.nivelManha != null ? String(item.nivelManha) : "";
+        tdManha.textContent =          
+          item.nivelManha != null ? Number(item.nivelManha).toFixed(2) : "";
         tr.appendChild(tdManha);
 
         // Tarde
@@ -886,8 +893,8 @@ document.addEventListener("DOMContentLoaded", () => {
         tdTarde.style.border = "1px solid #ccc";
         tdTarde.style.padding = "6px";
         tdTarde.style.textAlign = "center";
-        tdTarde.textContent =
-          item.nivelTarde != null ? String(item.nivelTarde) : "";
+        tdTarde.textContent =          
+          item.nivelTarde != null ? Number(item.nivelTarde).toFixed(2) : "";
         tr.appendChild(tdTarde);
 
         // Chuva
@@ -895,7 +902,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tdChuva.style.border = "1px solid #ccc";
         tdChuva.style.padding = "6px";
         tdChuva.style.textAlign = "center";
-        tdChuva.textContent = item.chuvaMM != null ? String(item.chuvaMM) : "";
+        tdChuva.textContent = item.chuvaMM != null ? Number(item.chuvaMM).toFixed(1) : "";
         tr.appendChild(tdChuva);
 
         // Duração
@@ -906,12 +913,18 @@ document.addEventListener("DOMContentLoaded", () => {
         tdDur.textContent = formatDuration(item);
         tr.appendChild(tdDur);
 
-        // Fenômenos
+        // Fenômenos (pode ser string ou array)
         const tdFen = document.createElement("td");
         tdFen.style.border = "1px solid #ccc";
         tdFen.style.padding = "6px";
         tdFen.style.textAlign = "center";
-        tdFen.textContent = item.tipoChuva || "";
+        let fenText = "";
+        if (Array.isArray(item.tipoChuva)) {
+          fenText = item.tipoChuva.join(" | ");
+        } else if (item.tipoChuva) {
+          fenText = String(item.tipoChuva);
+        }
+        tdFen.textContent = fenText;
         tr.appendChild(tdFen);
 
         tbody.appendChild(tr);
@@ -952,7 +965,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <h3>Resumo do período</h3>
               <ul>
                 <li><span>Total de chuva:</span> <strong>${rainTotalText}</strong></li>
-                <li><span>Dias com chuva &gt;= 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
+                <li><span>Dias com chuva &ge; 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
                 <li><span>Chuva máxima:</span> <strong>${rainMaxText}</strong></li>
                 <li><span>Nível do rio (Manhã):</span> <strong>${morningRange}</strong></li>
                 <li><span>Nível do rio (Tarde):</span> <strong>${afternoonRange}</strong></li>
