@@ -261,7 +261,7 @@ function calculateMonthlyStats(dataArray) {
   });
 
   const totalRain = rainValues.reduce((sum, value) => sum + value, 0);
-  const rainyDays = rainValues.filter((value) => value > 1).length;
+  const rainyDays = rainValues.filter((value) => value >= 1).length;
   const rainMax = rainValues.length ? Math.max(...rainValues) : null;
 
   const morningMin = morningValues.length ? Math.min(...morningValues) : null;
@@ -310,7 +310,7 @@ function updateMonthlySummary(dataArray) {
     <h3>Resumo do mês</h3>
     <ul>
       <li><span>Total de chuva:</span> <strong>${rainTotalText}</strong></li>
-      <li><span>Dias com chuva &gt; 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
+      <li><span>Dias com chuva &gt;= 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
       <li><span>Chuva máxima:</span> <strong>${rainMaxText}</strong></li>
       <li><span>Nível do rio (Manhã):</span> <strong>${morningRange}</strong></li>
       <li><span>Nível do rio (Tarde):</span> <strong>${afternoonRange}</strong></li>
@@ -952,7 +952,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <h3>Resumo do período</h3>
               <ul>
                 <li><span>Total de chuva:</span> <strong>${rainTotalText}</strong></li>
-                <li><span>Dias com chuva &gt; 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
+                <li><span>Dias com chuva &gt;= 1.0 mm:</span> <strong>${stats.rainyDays}</strong></li>
                 <li><span>Chuva máxima:</span> <strong>${rainMaxText}</strong></li>
                 <li><span>Nível do rio (Manhã):</span> <strong>${morningRange}</strong></li>
                 <li><span>Nível do rio (Tarde):</span> <strong>${afternoonRange}</strong></li>
